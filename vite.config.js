@@ -1,4 +1,5 @@
 import { defineConfig } from 'vite';
+import { viteSingleFile } from 'vite-plugin-singlefile';
 
 function jiraProxyPlugin() {
   return {
@@ -88,8 +89,17 @@ function jiraProxyPlugin() {
 }
 
 export default defineConfig({
-  base: './',
-  plugins: [jiraProxyPlugin()],
+  plugins: [jiraProxyPlugin(), viteSingleFile()],
+  build: {
+    target: 'esnext',
+    assetsInlineLimit: 100000000,
+    chunkSizeWarningLimit: 100000000,
+    cssCodeSplit: false,
+    brotliSize: false,
+    rollupOptions: {
+      inlineDynamicImports: true
+    }
+  },
   server: {
     port: 3000,
     open: false,
