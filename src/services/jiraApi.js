@@ -135,6 +135,64 @@ class JiraApiService {
   }
 
   /**
+   * Fetch all live issues across Agile boards and history
+   */
+  async getAllLiveIssues(credentials) {
+    const issuesMap = new Map();
+
+    // 1. Fetch from Agile Boards
+    try {
+      const boardsData = await this.request('/rest/agile/1.0/board?maxResults=50', { method: 'GET' }, credentials);
+      if (boardsData && Array.isArray(boardsData.values)) {
+        for (const b of boardsData.values) {
+          try {
+            const bIssues = await this.request(`/rest/agile/1.0/board/${b.id}/issue?maxResults=100`, { method: 'GET' }, credentials);
+            if (bIssues && Array.isArray(bIssues.issues)) {
+              bIssues.issues.forEach(i => {
+                if (!issuesMap.has(i.key)) {
+                  issuesMap.set(i.key, {
+                    key: i.key,
+                    summary: i.fields?.summary || 'No summary',
+                    status: i.fields?.status?.name || 'TO DO',
+                    type: i.fields?.issuetype?.name || 'Task',
+                    project: i.fields?.project?.name || i.key.split('-')[0]
+                  });
+                }
+              });
+            }
+          } catch (e) {
+            console.warn(`Error fetching board ${b.id}:`, e.message);
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Error fetching boards:', e.message);
+    }
+
+    // 2. Also fetch from Issue Picker history
+    try {
+      const pickerData = await this.request('/rest/api/3/issue/picker?showSubTasks=true', { method: 'GET' }, credentials);
+      if (pickerData && Array.isArray(pickerData.sections)) {
+        pickerData.sections.forEach(s => {
+          (s.issues || []).forEach(i => {
+            if (!issuesMap.has(i.key)) {
+              issuesMap.set(i.key, {
+                key: i.key,
+                summary: i.summaryText || i.summary || 'Task',
+                status: 'TO DO',
+                type: 'Task',
+                project: i.key.split('-')[0]
+              });
+            }
+          });
+        });
+      }
+    } catch (e) {}
+
+    return Array.from(issuesMap.values());
+  }
+
+  /**
    * Search Jira issues by keyword, key, or project
    */
   async searchIssues(query, credentials) {

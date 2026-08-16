@@ -822,35 +822,39 @@ function handleIssueSearch() {
 }
 
 async function renderModalIssuesList() {
-  elements.modalIssuesList.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted);">Loading issues...</div>';
+  elements.modalIssuesList.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted);">Fetching issues from Jira Cloud...</div>';
   const query = elements.inputIssueSearch.value.trim().toLowerCase();
   let issues = [];
+
+  const creds = state.settings;
+  const isJiraConnected = creds.domain && creds.email && creds.apiToken;
 
   if (state.activeFilter === 'favorites') {
     issues = state.favorites || [];
   } else if (state.activeFilter === 'recent') {
     issues = state.recents || [];
-  } else if (state.activeFilter === 'my-issues') {
-    // If Jira is connected, try to fetch live issues
-    if (state.settings.domain && state.settings.email && state.settings.apiToken) {
+  } else if (state.activeFilter === 'my-issues' || state.activeFilter === 'all') {
+    if (isJiraConnected) {
       try {
-        issues = await jiraApi.searchIssues(query, state.settings);
+        if (query) {
+          issues = await jiraApi.searchIssues(query, creds);
+        } else {
+          issues = await jiraApi.getAllLiveIssues(creds);
+        }
       } catch (e) {
-        issues = state.favorites;
+        console.warn('Error loading live issues:', e.message);
       }
-    } else {
-      issues = state.favorites;
     }
-  } else {
-    // All presets + favorites
-    issues = [...state.favorites, ...state.recents];
+    // Always combine with local favorites and recents
+    issues = [...issues, ...(state.favorites || []), ...(state.recents || [])];
   }
 
   // Filter by search query if present
   if (query) {
     issues = issues.filter(i => 
-      i.key.toLowerCase().includes(query) || 
-      (i.summary && i.summary.toLowerCase().includes(query))
+      (i.key && i.key.toLowerCase().includes(query)) || 
+      (i.summary && i.summary.toLowerCase().includes(query)) ||
+      (i.project && i.project.toLowerCase().includes(query))
     );
   }
 
