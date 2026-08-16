@@ -1,0 +1,426 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, maximum-scale=1.0, user-scalable=no" />
+  <meta name="theme-color" content="#080C15" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <meta name="description" content="Log your daily Jira work with a fast, modern mobile UI and Netlify deploy." />
+  <link rel="icon" type="image/svg+xml" href="/icon.svg" />
+  <link rel="apple-touch-icon" href="/icon.svg" />
+  <link rel="manifest" href="/manifest.json" />
+  <title>Jira Daily Worklog | Timesheet Tracker</title>
+  <link rel="stylesheet" href="/src/style.css" />
+</head>
+<body>
+  <!-- Ambient background glow -->
+  <div class="bg-glow-orb bg-glow-1"></div>
+  <div class="bg-glow-orb bg-glow-2"></div>
+
+  <div class="app-container">
+    <!-- Header -->
+    <header class="app-header">
+      <div class="brand-area" id="btnBrandLogo">
+        <div class="brand-logo">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="12" cy="12" r="10"/>
+            <polyline points="12 6 12 12 16 14"/>
+          </svg>
+        </div>
+        <div class="brand-text">
+          <h1>Jira Worklog</h1>
+          <div class="brand-subtitle">
+            <span class="status-dot" id="headerStatusDot"></span>
+            <span id="headerStatusText">Offline Mode (Local Storage)</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button class="header-btn" id="btnOpenSettings">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M12.22 2h-.44a2 2 0 0 0-2 2v.18a2 2 0 0 1-1 1.73l-.43.25a2 2 0 0 1-2 0l-.15-.08a2 2 0 0 0-2.73.73l-.22.38a2 2 0 0 0 .73 2.73l.15.1a2 2 0 0 1 1 1.72v.51a2 2 0 0 1-1 1.74l-.15.09a2 2 0 0 0-.73 2.73l.22.38a2 2 0 0 0 2.73.73l.15-.08a2 2 0 0 1 2 0l.43.25a2 2 0 0 1 1 1.73V20a2 2 0 0 0 2 2h.44a2 2 0 0 0 2-2v-.18a2 2 0 0 1 1-1.73l.43-.25a2 2 0 0 1 2 0l.15.08a2 2 0 0 0 2.73-.73l.22-.39a2 2 0 0 0-.73-2.73l-.15-.08a2 2 0 0 1-1-1.74v-.5a2 2 0 0 1 1-1.74l.15-.09a2 2 0 0 0 .73-2.73l-.22-.38a2 2 0 0 0-2.73-.73l-.15.08a2 2 0 0 1-2 0l-.43-.25a2 2 0 0 1-1-1.73V4a2 2 0 0 0-2-2z"/>
+            <circle cx="12" cy="12" r="3"/>
+          </svg>
+          <span>Settings</span>
+        </button>
+        <div class="user-avatar-badge" id="btnUserAvatar" title="User Profile">
+          <span id="userAvatarInitials">AH</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Daily Hero Progress Tracker -->
+    <section class="daily-hero-card">
+      <div class="hero-top-row">
+        <div class="hero-date-info">
+          <h2>
+            <span id="heroDateFormatted">Today</span>
+            <span class="hero-date-tag" id="heroDayTag">Sun, Aug 16</span>
+          </h2>
+        </div>
+        <div class="hero-progress-stats">
+          <div class="stat-item">
+            <div class="stat-label">Daily Goal</div>
+            <div class="stat-value" id="statDailyGoal">8.0h</div>
+          </div>
+          <div class="stat-item">
+            <div class="stat-label">Logged Today</div>
+            <div class="stat-value highlight" id="statLoggedToday">0.0h</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="progress-track-wrapper">
+        <div class="progress-track">
+          <div class="progress-fill" id="heroProgressFill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div class="hero-substats">
+        <div class="badge-billable-summary">
+          <span class="badge-pill-small billable" id="heroBillableHours">0h Billable</span>
+          <span id="heroNonBillableHours" style="font-size:0.75rem; color:var(--text-muted);">0h Non-Billable</span>
+        </div>
+        <div id="heroRemainingHoursText">8.0h remaining to complete daily goal</div>
+      </div>
+    </section>
+
+    <!-- View Selection Tabs -->
+    <nav class="view-tabs">
+      <button class="tab-btn active" data-view="log-view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <circle cx="12" cy="12" r="10"/>
+          <polyline points="12 6 12 12 16 14"/>
+        </svg>
+        <span>Log Work</span>
+      </button>
+      <button class="tab-btn" data-view="timesheet-view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <rect x="3" y="4" width="18" height="18" rx="2" ry="2"/>
+          <line x1="16" y1="2" x2="16" y2="6"/>
+          <line x1="8" y1="2" x2="8" y2="6"/>
+          <line x1="3" y1="10" x2="21" y2="10"/>
+        </svg>
+        <span>Timesheet & Summary</span>
+      </button>
+      <button class="tab-btn" data-view="favorites-view">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+        </svg>
+        <span>Starred Issues</span>
+      </button>
+    </nav>
+
+    <!-- Main Grid Content -->
+    <main class="main-grid">
+      <!-- Left Column: Primary Worklog Form -->
+      <section class="glass-card" id="cardLogWork">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/>
+            </svg>
+            <span>Log Work to Jira</span>
+          </div>
+          <button class="filter-chip" id="btnQuickSelectIssue">
+            🔍 Browse Issues
+          </button>
+        </div>
+
+        <form id="formLogWork">
+          <!-- Selected Issue Card -->
+          <div class="selected-issue-box" id="selectedIssueBox">
+            <div class="issue-info-wrap">
+              <div class="issue-key-badge">
+                <span id="selectedIssueTypeIcon">📋</span>
+                <span id="selectedIssueKey">AAIB2311-39</span>
+                <span class="issue-status-tag in-progress" id="selectedIssueStatus">TO DO</span>
+              </div>
+              <div class="issue-summary-text" id="selectedIssueSummary">
+                BA Analysis - HBD - Digital Banking Platform
+              </div>
+            </div>
+            <button type="button" class="btn-change-issue" id="btnChangeIssue">Change</button>
+          </div>
+
+          <!-- Quick Fav Chips Strip -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Quick Select Starred Issue</span>
+            </label>
+            <div class="template-chips-container" id="quickFavoritesList">
+              <!-- Populated via JS -->
+            </div>
+          </div>
+
+          <!-- Time Spent Section -->
+          <div class="form-group">
+            <label class="form-label">
+              <span>Time Spent</span>
+              <span class="optional">Target: 8h</span>
+            </label>
+            <div class="time-spent-container">
+              <div class="time-inputs-row">
+                <div class="time-input-box">
+                  <input type="number" id="inputHours" min="0" max="24" value="8" step="1" />
+                  <span class="time-input-unit">h</span>
+                </div>
+                <div class="time-input-box">
+                  <input type="number" id="inputMinutes" min="0" max="59" value="0" step="5" />
+                  <span class="time-input-unit">m</span>
+                </div>
+              </div>
+
+              <!-- Quick Time Preset Chips -->
+              <div class="quick-time-chips" id="quickTimeChips">
+                <button type="button" class="chip-btn" data-time="15m">15m</button>
+                <button type="button" class="chip-btn" data-time="30m">30m</button>
+                <button type="button" class="chip-btn" data-time="45m">45m</button>
+                <button type="button" class="chip-btn" data-time="1h">1h</button>
+                <button type="button" class="chip-btn" data-time="2h">2h</button>
+                <button type="button" class="chip-btn" data-time="4h">4h</button>
+                <button type="button" class="chip-btn" data-time="6h">6h</button>
+                <button type="button" class="chip-btn highlight-8h active" data-time="8h">8h (Full Day)</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Date & Time Row -->
+          <div class="form-group">
+            <label class="form-label" for="inputDateTime">
+              <span>Date & Time Started</span>
+            </label>
+            <div style="display:flex; gap:10px; margin-bottom: 8px;">
+              <button type="button" class="filter-chip active" id="btnDateToday">Today</button>
+              <button type="button" class="filter-chip" id="btnDateYesterday">Yesterday</button>
+            </div>
+            <input type="datetime-local" class="form-control" id="inputDateTime" />
+          </div>
+
+          <!-- Category Selection: Billable vs Non-Billable -->
+          <div class="form-group">
+            <label class="form-label">Category</label>
+            <div class="category-toggle-group">
+              <label class="category-radio-card">
+                <input type="radio" name="workCategory" value="Billable" checked />
+                <div class="category-card-content">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><polyline points="20 6 9 17 4 12"/></svg>
+                  <span>Billable</span>
+                </div>
+              </label>
+              <label class="category-radio-card non-billable">
+                <input type="radio" name="workCategory" value="Non-Billable" />
+                <div class="category-card-content">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><circle cx="12" cy="12" r="10"/></svg>
+                  <span>Non-Billable</span>
+                </div>
+              </label>
+            </div>
+          </div>
+
+          <!-- Work Description & Preset Templates -->
+          <div class="form-group">
+            <label class="form-label" for="inputDescription">
+              <span>Work Description</span>
+              <span class="optional">Templates available below</span>
+            </label>
+            <div class="template-chips-container" id="descTemplateChips">
+              <!-- Populated via JS -->
+            </div>
+            <textarea class="form-control" id="inputDescription" placeholder="What did you work on? (e.g. Implementation, BA review, Sprint sync)...">Development & implementation of features</textarea>
+          </div>
+
+          <!-- Submit Button and Keep Open Checkbox -->
+          <div class="form-actions-row">
+            <label class="checkbox-label">
+              <input type="checkbox" id="checkLogAnother" />
+              <span>Log another entry</span>
+            </label>
+            <button type="submit" class="btn-primary-submit" id="btnSubmitWorklog">
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="22" y1="2" x2="11" y2="13"/>
+                <polygon points="22 2 15 22 11 13 2 9 22 2"/>
+              </svg>
+              <span id="btnSubmitText">Submit to Jira (8h)</span>
+            </button>
+          </div>
+        </form>
+      </section>
+
+      <!-- Right Column: Timesheet Overview, Weekly Strip & History -->
+      <section class="glass-card" id="cardTimesheetSummary">
+        <div class="card-header">
+          <div class="card-title">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <line x1="18" y1="20" x2="18" y2="10"/>
+              <line x1="12" y1="20" x2="12" y2="4"/>
+              <line x1="6" y1="20" x2="6" y2="14"/>
+            </svg>
+            <span>Weekly Timesheet</span>
+          </div>
+          <button class="header-btn" id="btnCopyStandup" title="Copy formatted text for Slack / WhatsApp standup">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <rect x="9" y="9" width="13" height="13" rx="2" ry="2"/>
+              <path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/>
+            </svg>
+            <span>Copy Standup</span>
+          </button>
+        </div>
+
+        <!-- Weekly Calendar Strip -->
+        <div class="weekly-calendar-strip" id="weeklyCalendarStrip">
+          <!-- Populated via JS -->
+        </div>
+
+        <!-- Today's Logged Entries -->
+        <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 12px;">
+          <h4 style="font-size: 0.95rem; font-weight: 700; color: var(--text-primary);">
+            Worklogs (<span id="historyCount">0</span>)
+          </h4>
+          <span style="font-size: 0.78rem; color: var(--text-muted);" id="historyFilterLabel">All Days</span>
+        </div>
+
+        <div class="history-list" id="historyListContainer">
+          <!-- Populated via JS -->
+        </div>
+      </section>
+    </main>
+
+    <!-- Starred Issues Full Manager View (Hidden by default, shown via Tab) -->
+    <section class="glass-card" id="viewFavoritesSection" style="display: none; margin-top: 24px;">
+      <div class="card-header">
+        <div class="card-title">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/>
+          </svg>
+          <span>Starred & Frequent Issues</span>
+        </div>
+        <button class="filter-chip" id="btnAddCustomIssueBtn">
+          + Add Ticket Key
+        </button>
+      </div>
+      <p style="font-size: 0.85rem; color: var(--text-secondary); margin-bottom: 16px;">
+        Pin your frequent Jira issues here for 1-tap fast logging whenever you open the app from your mobile.
+      </p>
+      <div class="issues-scroll-list" id="favoritesFullList">
+        <!-- Populated via JS -->
+      </div>
+    </section>
+  </div>
+
+  <!-- Issue Selector Modal -->
+  <div class="modal-overlay" id="modalIssueSelector">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Select Jira Issue</h3>
+        <button class="modal-close-btn" id="btnCloseIssueModal">&times;</button>
+      </div>
+
+      <div class="issue-search-box">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+        <input type="text" class="form-control issue-search-input" id="inputIssueSearch" placeholder="Search by issue key (e.g. AAIB2311-39) or summary..." />
+      </div>
+
+      <div class="issue-tabs-filter">
+        <button class="filter-chip active" data-filter="favorites">⭐ Favorites</button>
+        <button class="filter-chip" data-filter="recent">Recent</button>
+        <button class="filter-chip" data-filter="my-issues">Assigned to Me</button>
+        <button class="filter-chip" data-filter="all">All Presets</button>
+      </div>
+
+      <!-- Quick Add Issue Direct Input -->
+      <div style="display:flex; gap:8px; margin-bottom: 14px;">
+        <input type="text" class="form-control" id="inputDirectKey" placeholder="Or enter Jira Key e.g. AT-100" style="text-transform:uppercase;" />
+        <button type="button" class="header-btn" id="btnApplyDirectKey" style="background:var(--jira-blue); color:#fff; border:none;">Select</button>
+      </div>
+
+      <div class="issues-scroll-list" id="modalIssuesList">
+        <!-- Populated via JS -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Settings & Jira Connection Modal -->
+  <div class="modal-overlay" id="modalSettings">
+    <div class="modal-dialog">
+      <div class="modal-header">
+        <h3>Jira Connection & Settings</h3>
+        <button class="modal-close-btn" id="btnCloseSettingsModal">&times;</button>
+      </div>
+
+      <form id="formSettings">
+        <div class="form-group">
+          <label class="form-label" for="settingDomain">Jira Cloud Domain</label>
+          <input type="text" class="form-control" id="settingDomain" placeholder="valleysoft.atlassian.net" value="valleysoft.atlassian.net" required />
+          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+            e.g. <code>valleysoft.atlassian.net</code> or your company Atlassian URL
+          </p>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="settingEmail">Jira Email</label>
+          <input type="email" class="form-control" id="settingEmail" placeholder="your.name@valleysoft.com" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="settingApiToken">
+            <span>Atlassian API Token</span>
+            <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" style="color:var(--jira-blue-light); text-decoration:none; font-size:0.75rem;">Generate Token &nearr;</a>
+          </label>
+          <input type="password" class="form-control" id="settingApiToken" placeholder="Paste your Jira API Token" />
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="settingDailyGoal">Daily Hours Target</label>
+          <input type="number" class="form-control" id="settingDailyGoal" min="1" max="24" value="8" />
+        </div>
+
+        <!-- Connection Test Status Banner -->
+        <div id="connectionStatusBanner" style="display:none; padding:12px; border-radius:var(--radius-md); margin-bottom:16px; font-size:0.85rem;"></div>
+
+        <div style="display:flex; gap:10px; margin-top:20px;">
+          <button type="button" class="header-btn" id="btnTestConnection" style="flex:1; justify-content:center;">
+            Test Connection
+          </button>
+          <button type="submit" class="btn-primary-submit" style="flex:1;">
+            Save Settings
+          </button>
+        </div>
+
+        <hr style="border:0; border-top:1px solid var(--border-color); margin:20px 0;" />
+
+        <div style="display:flex; justify-content:space-between; align-items:center;">
+          <span style="font-size:0.8rem; color:var(--text-muted);">Clear saved data & cache</span>
+          <button type="button" class="btn-icon-danger" id="btnClearData" style="font-size:0.8rem; padding:6px 12px; background:rgba(255,86,48,0.15); color:var(--jira-red); border-radius:var(--radius-sm);">
+            Reset Data
+          </button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <!-- Mobile Bottom Navigation -->
+  <nav class="mobile-bottom-nav">
+    <button class="mobile-nav-item active" data-view="log-view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <span>Log Work</span>
+    </button>
+    <button class="mobile-nav-item" data-view="timesheet-view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+      <span>Timesheet</span>
+    </button>
+    <button class="mobile-nav-item" data-view="favorites-view">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      <span>Starred</span>
+    </button>
+    <button class="mobile-nav-item" id="btnMobileSettings">
+      <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+      <span>Settings</span>
+    </button>
+  </nav>
+
+  <script type="module" src="/src/main.js"></script>
+</body>
+</html>

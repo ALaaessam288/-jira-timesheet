@@ -1,0 +1,204 @@
+// Jira Cloud REST API Client with Netlify / Vite CORS Proxy support
+
+class JiraApiService {
+  formatDomain(domain) {
+    if (!domain) return '';
+    let d = domain.trim();
+    d = d.replace(/^https?:\/\//, '');
+    d = d.replace(/\/+$/, '');
+    if (!d.includes('.')) {
+      d = `${d}.atlassian.net`;
+    }
+    return d;
+  }
+
+  async request(path, options = {}, credentials = {}) {
+    const domain = this.formatDomain(credentials.domain);
+    const email = credentials.email ? credentials.email.trim() : '';
+    const apiToken = credentials.apiToken ? credentials.apiToken.trim() : '';
+
+    if (!domain || !email || !apiToken) {
+      throw new Error('Please configure your Jira Domain, Email, and API Token in Settings.');
+    }
+
+    const payload = {
+      domain,
+      email,
+      apiToken,
+      path,
+      method: options.method || 'GET',
+      body: options.body
+    };
+
+    const proxyUrl = '/api/jira-proxy';
+
+    try {
+      const response = await fetch(proxyUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const responseText = await response.text();
+      let data = null;
+      try {
+        data = responseText ? JSON.parse(responseText) : {};
+      } catch {
+        data = { rawText: responseText };
+      }
+
+      if (!response.ok) {
+        if (response.status === 401) {
+          throw new Error('Invalid Jira email or API Token (401 Unauthorized). Please check your API token.');
+        } else if (response.status === 403) {
+          throw new Error('Access forbidden (403 Forbidden). You might not have permission to perform this action in Jira.');
+        } else if (response.status === 404) {
+          throw new Error(`Jira endpoint or issue not found (${path}). Check your Jira site URL.`);
+        }
+        
+        const errorMsg = data?.errorMessages?.join(', ') || 
+                         (data?.errors ? Object.values(data.errors).join(', ') : null) || 
+                         data?.error || 
+                         `Request failed with status ${response.status}`;
+        throw new Error(errorMsg);
+      }
+
+      return data;
+    } catch (err) {
+      if (err.message && (err.message.includes('Failed to fetch') || err.message.includes('NetworkError'))) {
+        throw new Error('Could not connect to Jira API Proxy. If testing locally, make sure Vite server is running.');
+      }
+      throw err;
+    }
+  }
+
+  /**
+   * Test Jira connection and fetch current user profile
+   */
+  async testConnection(domain, email, apiToken) {
+    const creds = { domain, email, apiToken };
+    const user = await this.request('/rest/api/3/myself', { method: 'GET' }, creds);
+    return {
+      displayName: user.displayName || user.name || email,
+      emailAddress: user.emailAddress || email,
+      avatarUrl: user.avatarUrls?.['48x48'] || user.avatarUrls?.['32x32'] || '',
+      accountId: user.accountId,
+      timeZone: user.timeZone || 'UTC'
+    };
+  }
+
+  /**
+   * Fetch single Jira issue details
+   */
+  async getIssue(issueKey, credentials) {
+    if (!issueKey) return null;
+    const cleanKey = issueKey.trim().toUpperCase();
+    try {
+      const data = await this.request(`/rest/api/3/issue/${cleanKey}?fields=summary,status,issuetype,project`, {
+        method: 'GET'
+      }, credentials);
+
+      return {
+        key: data.key,
+        summary: data.fields?.summary || '',
+        status: data.fields?.status?.name || 'TO DO',
+        type: data.fields?.issuetype?.name || 'Task',
+        project: data.fields?.project?.name || data.key.split('-')[0]
+      };
+    } catch {
+      return null;
+    }
+  }
+
+  /**
+   * Search issues assigned to current user or recent issues
+   */
+  async getMyIssues(credentials) {
+    return [];
+  }
+
+  /**
+   * Search Jira issues by keyword or key
+   */
+  async searchIssues(query, credentials) {
+    if (!query || !query.trim()) {
+      return [];
+    }
+
+    const q = query.trim();
+    const results = [];
+
+    // If query looks like an exact issue key, fetch it directly
+    if (/^[A-Z0-9]+-\d+$/i.test(q)) {
+      const directIssue = await this.getIssue(q, credentials);
+      if (directIssue) {
+        results.push(directIssue);
+      }
+    }
+
+    // Also call issue picker
+    try {
+      const data = await this.request(`/rest/api/3/issue/picker?query=${encodeURIComponent(q)}&showSubTasks=true`, {
+        method: 'GET'
+      }, credentials);
+
+      if (data.sections) {
+        data.sections.forEach(section => {
+          (section.issues || []).forEach(item => {
+            if (!results.some(r => r.key === item.key)) {
+              results.push({
+                key: item.key,
+                summary: item.summaryText || item.summary || '',
+                status: 'TO DO',
+                type: 'Task',
+                project: item.key.split('-')[0]
+              });
+            }
+          });
+        });
+      }
+    } catch (e) {
+      console.warn('Issue picker query error:', e);
+    }
+
+    return results;
+  }
+
+  /**
+   * Post worklog to Jira issue
+   */
+  async logWork(issueKey, { timeSpentSeconds, started, comment }, credentials) {
+    if (!issueKey) throw new Error('Please select an issue to log work on.');
+    if (!timeSpentSeconds || timeSpentSeconds <= 0) throw new Error('Time spent must be greater than 0.');
+
+    const body = {
+      timeSpentSeconds: Math.round(timeSpentSeconds),
+      started: started || new Date().toISOString(),
+      comment: {
+        type: 'doc',
+        version: 1,
+        content: [
+          {
+            type: 'paragraph',
+            content: [
+              {
+                type: 'text',
+                text: comment || 'Work logged via Mobile Timesheet App'
+              }
+            ]
+          }
+        ]
+      }
+    };
+
+    return await this.request(`/rest/api/3/issue/${issueKey}/worklog`, {
+      method: 'POST',
+      body
+    }, credentials);
+  }
+}
+
+export const jiraApi = new JiraApiService();
