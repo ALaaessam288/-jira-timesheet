@@ -1049,15 +1049,14 @@ function populateSettingsForm() {
 
 function updateConnectionStatusUI() {
   const s = state.settings;
-  if (s.isConnected && s.domain) {
-    elements.headerStatusDot.className = 'status-dot connected';
-    elements.headerStatusText.textContent = `Connected: ${s.domain}`;
-  } else if (s.domain && s.email && s.apiToken) {
-    elements.headerStatusDot.className = 'status-dot connected';
-    elements.headerStatusText.textContent = `Jira Cloud: ${s.domain}`;
+  elements.headerStatusDot.className = 'status-dot connected';
+
+  if (s.isConnected && s.displayName) {
+    elements.headerStatusText.textContent = `Online: ${s.displayName} (${s.domain || 'Jira Cloud'})`;
+  } else if (s.domain) {
+    elements.headerStatusText.textContent = `Online Mode (${s.domain})`;
   } else {
-    elements.headerStatusDot.className = 'status-dot';
-    elements.headerStatusText.textContent = 'Offline Mode (Local Storage)';
+    elements.headerStatusText.textContent = 'Online Mode (Jira Cloud)';
   }
 
   // Update user initials
