@@ -114,44 +114,56 @@ class JiraApiService {
   }
 
   /**
-   * Search issues assigned to current user or recent issues
+   * Fetch all accessible Jira projects
    */
-  async getMyIssues(credentials) {
-    return [];
+  async getProjects(credentials) {
+    try {
+      const data = await this.request('/rest/api/3/project', { method: 'GET' }, credentials);
+      if (Array.isArray(data)) {
+        return data.map(p => ({
+          id: p.id,
+          key: p.key,
+          name: p.name,
+          avatarUrl: p.avatarUrls?.['24x24'] || ''
+        }));
+      }
+      return [];
+    } catch (e) {
+      console.warn('Error fetching projects:', e.message);
+      return [];
+    }
   }
 
   /**
-   * Search Jira issues by keyword or key
+   * Search Jira issues by keyword, key, or project
    */
   async searchIssues(query, credentials) {
-    if (!query || !query.trim()) {
-      return [];
-    }
-
-    const q = query.trim();
+    const q = (query || '').trim();
     const results = [];
 
-    // If query looks like an exact issue key, fetch it directly
-    if (/^[A-Z0-9]+-\d+$/i.test(q)) {
+    // 1. If query is a specific issue key, fetch directly
+    if (q && /^[A-Z0-9]+-\d+$/i.test(q)) {
       const directIssue = await this.getIssue(q, credentials);
       if (directIssue) {
         results.push(directIssue);
       }
     }
 
-    // Also call issue picker
+    // 2. Call Jira Cloud issue picker
     try {
-      const data = await this.request(`/rest/api/3/issue/picker?query=${encodeURIComponent(q)}&showSubTasks=true`, {
-        method: 'GET'
-      }, credentials);
+      const pickerPath = q 
+        ? `/rest/api/3/issue/picker?query=${encodeURIComponent(q)}&showSubTasks=true`
+        : `/rest/api/3/issue/picker?showSubTasks=true`;
 
-      if (data.sections) {
+      const data = await this.request(pickerPath, { method: 'GET' }, credentials);
+
+      if (data && data.sections) {
         data.sections.forEach(section => {
           (section.issues || []).forEach(item => {
             if (!results.some(r => r.key === item.key)) {
               results.push({
                 key: item.key,
-                summary: item.summaryText || item.summary || '',
+                summary: item.summaryText || item.summary || 'Task',
                 status: 'TO DO',
                 type: 'Task',
                 project: item.key.split('-')[0]
@@ -161,7 +173,7 @@ class JiraApiService {
         });
       }
     } catch (e) {
-      console.warn('Issue picker query error:', e);
+      console.warn('Issue picker query error:', e.message);
     }
 
     return results;

@@ -934,19 +934,34 @@ async function renderModalIssuesList() {
   });
 }
 
-function handleApplyDirectKey() {
+async function handleApplyDirectKey() {
   const key = elements.inputDirectKey.value.trim().toUpperCase();
   if (!key) {
     showToast('Please enter a Jira Issue Key (e.g. AAIB2311-39)', 'warning');
     return;
   }
 
-  const issue = {
+  showToast(`Fetching ${key} from Jira...`, 'info', 1500);
+
+  let issue = {
     key: key,
-    summary: `Direct Jira ticket (${key})`,
+    summary: `Jira Issue ${key}`,
     status: 'TO DO',
     type: 'Task'
   };
+
+  // Try to fetch live issue details from Jira Cloud
+  const creds = state.settings;
+  if (creds.domain && creds.email && creds.apiToken) {
+    try {
+      const liveIssue = await jiraApi.getIssue(key, creds);
+      if (liveIssue) {
+        issue = liveIssue;
+      }
+    } catch (e) {
+      console.warn('Could not fetch direct issue from Jira:', e.message);
+    }
+  }
 
   storage.addRecentIssue(issue);
   state.selectedIssue = issue;
@@ -954,7 +969,7 @@ function handleApplyDirectKey() {
   renderQuickFavorites();
   closeModal(elements.modalIssueSelector);
   elements.inputDirectKey.value = '';
-  showToast(`Selected ${key}`, 'success', 2000);
+  showToast(`Selected ${issue.key}: ${issue.summary.substring(0, 30)}...`, 'success', 2500);
 }
 
 /**
