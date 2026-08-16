@@ -88,6 +88,7 @@ function jiraProxyPlugin() {
 }
 
 export default defineConfig({
+  base: './',
   plugins: [jiraProxyPlugin()],
   server: {
     port: 3000,

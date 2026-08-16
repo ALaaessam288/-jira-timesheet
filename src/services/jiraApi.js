@@ -17,10 +17,6 @@ class JiraApiService {
     const email = credentials.email ? credentials.email.trim() : '';
     const apiToken = credentials.apiToken ? credentials.apiToken.trim() : '';
 
-    if (!domain || !email || !apiToken) {
-      throw new Error('Please configure your Jira Domain, Email, and API Token in Settings.');
-    }
-
     const payload = {
       domain,
       email,
@@ -30,7 +26,11 @@ class JiraApiService {
       body: options.body
     };
 
-    const proxyUrl = '/api/jira-proxy';
+    // Determine proxy endpoint: if on GitHub Pages, route through the serverless proxy
+    let proxyUrl = '/api/jira-proxy';
+    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
+      proxyUrl = 'https://jira-time-sheet.netlify.app/api/jira-proxy';
+    }
 
     try {
       const response = await fetch(proxyUrl, {
