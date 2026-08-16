@@ -43,6 +43,7 @@ const elements = {
   settingDailyGoal: document.getElementById('settingDailyGoal'),
   settingOllamaUrl: document.getElementById('settingOllamaUrl'),
   settingOllamaModel: document.getElementById('settingOllamaModel'),
+  settingOllamaApiKey: document.getElementById('settingOllamaApiKey'),
   btnTestOllama: document.getElementById('btnTestOllama'),
   ollamaStatusBanner: document.getElementById('ollamaStatusBanner'),
   btnTestConnection: document.getElementById('btnTestConnection'),
@@ -999,6 +1000,9 @@ function populateSettingsForm() {
   if (elements.settingOllamaModel) {
     elements.settingOllamaModel.value = s.ollamaModel || 'llama3.2';
   }
+  if (elements.settingOllamaApiKey) {
+    elements.settingOllamaApiKey.value = s.ollamaApiKey || '';
+  }
 }
 
 function updateConnectionStatusUI() {
@@ -1026,13 +1030,14 @@ function updateConnectionStatusUI() {
 
 async function handleTestOllama() {
   const url = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
+  const apiKey = elements.settingOllamaApiKey ? elements.settingOllamaApiKey.value.trim() : '';
   elements.ollamaStatusBanner.style.display = 'block';
   elements.ollamaStatusBanner.style.background = 'rgba(101, 84, 192, 0.2)';
   elements.ollamaStatusBanner.innerHTML = 'Connecting to Ollama...';
   elements.btnTestOllama.disabled = true;
 
   try {
-    const res = await ollamaService.testConnection(url);
+    const res = await ollamaService.testConnection(url, apiKey);
     const count = res.models.length;
     const modelList = count > 0 ? `(${count} models: ${res.models.slice(0, 3).join(', ')})` : '';
     elements.ollamaStatusBanner.style.background = 'rgba(54, 179, 126, 0.2)';
@@ -1084,6 +1089,7 @@ function handleSaveSettings(e) {
   const dailyGoalHours = parseInt(elements.settingDailyGoal.value, 10) || 8;
   const ollamaEndpoint = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
   const ollamaModel = elements.settingOllamaModel ? elements.settingOllamaModel.value.trim() : 'llama3.2';
+  const ollamaApiKey = elements.settingOllamaApiKey ? elements.settingOllamaApiKey.value.trim() : '';
 
   const newSettings = {
     ...state.settings,
@@ -1093,6 +1099,7 @@ function handleSaveSettings(e) {
     dailyGoalHours,
     ollamaEndpoint,
     ollamaModel,
+    ollamaApiKey,
     isConnected: !!(domain && email && apiToken)
   };
 

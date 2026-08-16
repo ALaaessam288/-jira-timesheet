@@ -1,4 +1,4 @@
-// Ollama AI Service for enhancing worklog descriptions and generating standup summaries
+// Ollama & AI Service for enhancing worklog descriptions and generating standup summaries
 
 export class OllamaService {
   /**
@@ -29,7 +29,6 @@ export class OllamaService {
 
       case 'professional':
       default:
-        // Turn casual text into crisp professional engineering/BA worklog
         if (/^(dev|development|coding|code|implemented|implementing)/i.test(base)) {
           return `Engineered and integrated core functionality for: ${base} Performed local testing and verified pull request readiness.`;
         }
@@ -44,9 +43,9 @@ export class OllamaService {
   }
 
   /**
-   * Enhance work description using Ollama LLM (e.g. llama3.2, mistral, qwen2.5) with fallback
+   * Enhance work description using Ollama / Ollama Cloud / LLM
    */
-  async enhanceText(text, { style = 'professional', issueKey = '', issueSummary = '', endpoint = 'http://localhost:11434', model = 'llama3.2' } = {}) {
+  async enhanceText(text, { style = 'professional', issueKey = '', issueSummary = '', endpoint = 'http://localhost:11434', model = 'llama3.2', apiKey = '' } = {}) {
     const rawText = (text || '').trim() || issueSummary || 'worked on feature tasks';
 
     const prompt = `You are a professional Jira assistant. Enhance the following raw worklog notes into a concise, professional Jira worklog comment.
@@ -56,20 +55,25 @@ Raw notes: "${rawText}"
 
 Rules:
 1. Output ONLY the enhanced worklog text.
-2. Do NOT include markdown code blocks, quotes, or introductory remarks (e.g., do not say "Here is the enhanced version:").
+2. Do NOT include markdown code blocks, quotes, or introductory remarks.
 3. Keep it between 1 to 3 clear sentences.`;
 
     try {
-      const cleanEndpoint = endpoint.replace(/\/+$/, '');
+      const cleanEndpoint = (endpoint || 'http://localhost:11434').replace(/\/+$/, '');
       const targetUrl = `${cleanEndpoint}/api/generate`;
 
-      // Try local/direct fetch with timeout (3.5 seconds)
+      const headers = { 'Content-Type': 'application/json' };
+      if (apiKey && apiKey.trim()) {
+        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+      }
+
+      // 4 second timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3500);
+      const timeoutId = setTimeout(() => controller.abort(), 4000);
 
       const response = await fetch(targetUrl, {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers,
         body: JSON.stringify({
           model: model || 'llama3.2',
           prompt: prompt,
@@ -88,11 +92,11 @@ Rules:
         const data = await response.json();
         const output = data.response ? data.response.trim().replace(/^["']|["']$/g, '') : '';
         if (output) {
-          return { enhancedText: output, provider: 'Ollama (' + model + ')' };
+          return { enhancedText: output, provider: `Ollama (${model || 'AI'})` };
         }
       }
     } catch (err) {
-      console.warn('Ollama direct request error, falling back to smart AI rule engine:', err.message);
+      console.warn('Ollama request fallback:', err.message);
     }
 
     // Fallback to Smart Built-in Engine
@@ -101,17 +105,22 @@ Rules:
   }
 
   /**
-   * Test Ollama connection and list installed models
+   * Test Ollama connection
    */
-  async testConnection(endpoint = 'http://localhost:11434') {
+  async testConnection(endpoint = 'http://localhost:11434', apiKey = '') {
     try {
-      const cleanEndpoint = endpoint.replace(/\/+$/, '');
+      const cleanEndpoint = (endpoint || 'http://localhost:11434').replace(/\/+$/, '');
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 3000);
+      const timeoutId = setTimeout(() => controller.abort(), 3500);
+
+      const headers = { 'Accept': 'application/json' };
+      if (apiKey && apiKey.trim()) {
+        headers['Authorization'] = `Bearer ${apiKey.trim()}`;
+      }
 
       const res = await fetch(`${cleanEndpoint}/api/tags`, {
         method: 'GET',
-        headers: { 'Accept': 'application/json' },
+        headers,
         signal: controller.signal
       });
       clearTimeout(timeoutId);
@@ -121,7 +130,7 @@ Rules:
       const models = (data.models || []).map(m => m.name);
       return { success: true, models };
     } catch (err) {
-      throw new Error(`Could not connect to Ollama at ${endpoint} (${err.message}). Ensure Ollama is running ('ollama serve') or using CORS allowed origin.`);
+      throw new Error(`Could not connect to Ollama at ${endpoint} (${err.message})`);
     }
   }
 }
