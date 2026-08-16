@@ -1,5 +1,6 @@
 import { storage } from './services/storage.js';
 import { jiraApi } from './services/jiraApi.js';
+import { ollamaService } from './services/ollamaService.js';
 import {
   toJiraDateTimeString,
   toDateInputString,
@@ -22,6 +23,7 @@ const state = {
   activeFilter: 'favorites',
   selectedCalendarDate: null,
   isSubmitting: false,
+  aiStyle: 'professional',
 };
 
 // DOM Elements Cache
@@ -39,6 +41,10 @@ const elements = {
   settingEmail: document.getElementById('settingEmail'),
   settingApiToken: document.getElementById('settingApiToken'),
   settingDailyGoal: document.getElementById('settingDailyGoal'),
+  settingOllamaUrl: document.getElementById('settingOllamaUrl'),
+  settingOllamaModel: document.getElementById('settingOllamaModel'),
+  btnTestOllama: document.getElementById('btnTestOllama'),
+  ollamaStatusBanner: document.getElementById('ollamaStatusBanner'),
   btnTestConnection: document.getElementById('btnTestConnection'),
   connectionStatusBanner: document.getElementById('connectionStatusBanner'),
   btnClearData: document.getElementById('btnClearData'),
@@ -53,7 +59,7 @@ const elements = {
   heroNonBillableHours: document.getElementById('heroNonBillableHours'),
   heroRemainingHoursText: document.getElementById('heroRemainingHoursText'),
 
-  // Form Elements
+  // Form Elements & AI
   formLogWork: document.getElementById('formLogWork'),
   selectedIssueKey: document.getElementById('selectedIssueKey'),
   selectedIssueSummary: document.getElementById('selectedIssueSummary'),
@@ -67,6 +73,9 @@ const elements = {
   inputDateTime: document.getElementById('inputDateTime'),
   btnDateToday: document.getElementById('btnDateToday'),
   btnDateYesterday: document.getElementById('btnDateYesterday'),
+  btnAiEnhance: document.getElementById('btnAiEnhance'),
+  aiEnhanceText: document.getElementById('aiEnhanceText'),
+  aiStylesBar: document.getElementById('aiStylesBar'),
   descTemplateChips: document.getElementById('descTemplateChips'),
   inputDescription: document.getElementById('inputDescription'),
   checkLogAnother: document.getElementById('checkLogAnother'),
@@ -224,6 +233,27 @@ function setupEventListeners() {
       applyTimePreset(timeVal);
     });
   });
+
+  // AI Enhance & Style Chips
+  if (elements.btnAiEnhance) {
+    elements.btnAiEnhance.addEventListener('click', handleAiEnhance);
+  }
+
+  if (elements.aiStylesBar) {
+    elements.aiStylesBar.querySelectorAll('.chip-btn').forEach(chip => {
+      chip.addEventListener('click', () => {
+        elements.aiStylesBar.querySelectorAll('.chip-btn').forEach(c => c.classList.remove('active'));
+        chip.classList.add('active');
+        state.aiStyle = chip.dataset.style;
+        showToast(`AI Style: ${chip.textContent.trim()}`, 'info', 1500);
+      });
+    });
+  }
+
+  // Ollama Settings Test
+  if (elements.btnTestOllama) {
+    elements.btnTestOllama.addEventListener('click', handleTestOllama);
+  }
 
   // Date Shortcuts
   elements.btnDateToday.addEventListener('click', () => {
@@ -928,6 +958,33 @@ function renderFavoritesFullList() {
 }
 
 /**
+ * AI Enhance Worklog Description Handler
+ */
+async function handleAiEnhance() {
+  const currentText = elements.inputDescription.value.trim();
+  elements.btnAiEnhance.classList.add('loading');
+  elements.aiEnhanceText.textContent = 'Enhancing...';
+
+  try {
+    const res = await ollamaService.enhanceText(currentText, {
+      style: state.aiStyle || 'professional',
+      issueKey: state.selectedIssue?.key || '',
+      issueSummary: state.selectedIssue?.summary || '',
+      endpoint: state.settings.ollamaEndpoint || 'http://localhost:11434',
+      model: state.settings.ollamaModel || 'llama3.2'
+    });
+
+    elements.inputDescription.value = res.enhancedText;
+    showToast(`✨ Enhanced by ${res.provider}!`, 'success', 3500);
+  } catch (err) {
+    showToast(`AI Notice: ${err.message}`, 'warning');
+  } finally {
+    elements.btnAiEnhance.classList.remove('loading');
+    elements.aiEnhanceText.textContent = 'AI Enhance';
+  }
+}
+
+/**
  * Settings & Connection Management
  */
 function populateSettingsForm() {
@@ -936,6 +993,12 @@ function populateSettingsForm() {
   elements.settingEmail.value = s.email || '';
   elements.settingApiToken.value = s.apiToken || '';
   elements.settingDailyGoal.value = s.dailyGoalHours || 8;
+  if (elements.settingOllamaUrl) {
+    elements.settingOllamaUrl.value = s.ollamaEndpoint || 'http://localhost:11434';
+  }
+  if (elements.settingOllamaModel) {
+    elements.settingOllamaModel.value = s.ollamaModel || 'llama3.2';
+  }
 }
 
 function updateConnectionStatusUI() {
@@ -958,6 +1021,27 @@ function updateConnectionStatusUI() {
       ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() 
       : parts[0].substring(0, 2).toUpperCase();
     elements.userAvatarInitials.textContent = initials;
+  }
+}
+
+async function handleTestOllama() {
+  const url = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
+  elements.ollamaStatusBanner.style.display = 'block';
+  elements.ollamaStatusBanner.style.background = 'rgba(101, 84, 192, 0.2)';
+  elements.ollamaStatusBanner.innerHTML = 'Connecting to Ollama...';
+  elements.btnTestOllama.disabled = true;
+
+  try {
+    const res = await ollamaService.testConnection(url);
+    const count = res.models.length;
+    const modelList = count > 0 ? `(${count} models: ${res.models.slice(0, 3).join(', ')})` : '';
+    elements.ollamaStatusBanner.style.background = 'rgba(54, 179, 126, 0.2)';
+    elements.ollamaStatusBanner.innerHTML = `✅ Ollama Connected! ${modelList}`;
+  } catch (err) {
+    elements.ollamaStatusBanner.style.background = 'rgba(255, 86, 48, 0.2)';
+    elements.ollamaStatusBanner.innerHTML = `⚠️ ${err.message}<br><small style="color:var(--text-secondary);">App will automatically use Smart Built-in AI fallback.</small>`;
+  } finally {
+    elements.btnTestOllama.disabled = false;
   }
 }
 
@@ -998,6 +1082,8 @@ function handleSaveSettings(e) {
   const email = elements.settingEmail.value.trim();
   const apiToken = elements.settingApiToken.value.trim();
   const dailyGoalHours = parseInt(elements.settingDailyGoal.value, 10) || 8;
+  const ollamaEndpoint = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
+  const ollamaModel = elements.settingOllamaModel ? elements.settingOllamaModel.value.trim() : 'llama3.2';
 
   const newSettings = {
     ...state.settings,
@@ -1005,6 +1091,8 @@ function handleSaveSettings(e) {
     email,
     apiToken,
     dailyGoalHours,
+    ollamaEndpoint,
+    ollamaModel,
     isConnected: !!(domain && email && apiToken)
   };
 

@@ -220,16 +220,31 @@
             </div>
           </div>
 
-          <!-- Work Description & Preset Templates -->
+          <!-- Work Description & AI Enhancer -->
           <div class="form-group">
-            <label class="form-label" for="inputDescription">
-              <span>Work Description</span>
-              <span class="optional">Templates available below</span>
-            </label>
-            <div class="template-chips-container" id="descTemplateChips">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px;">
+              <label class="form-label" for="inputDescription" style="margin-bottom:0;">
+                <span>Work Description</span>
+              </label>
+              <button type="button" class="btn-ai-enhance" id="btnAiEnhance" title="Enhance your message with Ollama AI">
+                <span class="ai-sparkle-icon">✨</span>
+                <span id="aiEnhanceText">AI Enhance</span>
+              </button>
+            </div>
+
+            <!-- AI Style Selector Chips -->
+            <div class="ai-styles-bar" id="aiStylesBar">
+              <span style="font-size:0.75rem; color:var(--text-muted); margin-right:4px;">Style:</span>
+              <button type="button" class="chip-btn active" data-style="professional">👔 Professional</button>
+              <button type="button" class="chip-btn" data-style="bullets">📋 Bullets</button>
+              <button type="button" class="chip-btn" data-style="concise">⚡ Concise</button>
+              <button type="button" class="chip-btn" data-style="ba">🎯 BA / Spec</button>
+            </div>
+
+            <div class="template-chips-container" id="descTemplateChips" style="margin-top:8px;">
               <!-- Populated via JS -->
             </div>
-            <textarea class="form-control" id="inputDescription" placeholder="What did you work on? (e.g. Implementation, BA review, Sprint sync)...">Development & implementation of features</textarea>
+            <textarea class="form-control" id="inputDescription" placeholder="Type brief notes (e.g. fixed login bug, reviewed specs) and click AI Enhance..."></textarea>
           </div>
 
           <!-- Submit Button and Keep Open Checkbox -->
@@ -375,6 +390,31 @@
         <div class="form-group">
           <label class="form-label" for="settingDailyGoal">Daily Hours Target</label>
           <input type="number" class="form-control" id="settingDailyGoal" min="1" max="24" value="8" />
+        </div>
+
+        <!-- Ollama AI Settings -->
+        <div style="background:rgba(101,84,192,0.1); border:1px solid rgba(101,84,192,0.3); border-radius:var(--radius-md); padding:14px; margin-bottom:20px;">
+          <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px;">
+            <h4 style="font-size:0.9rem; font-weight:700; color:var(--jira-cyan); display:flex; align-items:center; gap:6px;">
+              <span>🦙 Ollama AI Model Settings</span>
+            </h4>
+            <span style="font-size:0.7rem; background:rgba(0,199,230,0.15); color:var(--jira-cyan); padding:2px 8px; border-radius:var(--radius-full); font-weight:600;">Free & Local</span>
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" for="settingOllamaUrl" style="font-size:0.78rem;">Ollama Server URL</label>
+            <input type="text" class="form-control" id="settingOllamaUrl" placeholder="http://localhost:11434" value="http://localhost:11434" style="font-size:0.85rem;" />
+          </div>
+
+          <div class="form-group" style="margin-bottom:12px;">
+            <label class="form-label" for="settingOllamaModel" style="font-size:0.78rem;">Model Name</label>
+            <input type="text" class="form-control" id="settingOllamaModel" placeholder="llama3.2, llama3, mistral, qwen2.5..." value="llama3.2" style="font-size:0.85rem;" />
+          </div>
+
+          <button type="button" class="header-btn" id="btnTestOllama" style="width:100%; justify-content:center; font-size:0.8rem; background:rgba(101,84,192,0.25); border-color:rgba(101,84,192,0.5);">
+            ⚡ Test Ollama Connection
+          </button>
+          <div id="ollamaStatusBanner" style="display:none; margin-top:8px; font-size:0.78rem; padding:8px; border-radius:6px;"></div>
         </div>
 
         <!-- Connection Test Status Banner -->

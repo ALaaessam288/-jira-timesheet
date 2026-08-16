@@ -18,6 +18,9 @@ const DEFAULT_SETTINGS = {
   dailyGoalHours: 8,
   defaultBillable: true,
   isConnected: false,
+  ollamaEndpoint: 'http://localhost:11434',
+  ollamaModel: 'llama3.2',
+  aiStyle: 'professional',
 };
 
 // Default preset issues inspired by user's workflow
