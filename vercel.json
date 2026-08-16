@@ -7,6 +7,10 @@
       "destination": "/api/jira-proxy.js"
     },
     {
+      "source": "/api/ai-enhance",
+      "destination": "/api/ai-enhance.js"
+    },
+    {
       "source": "/(.*)",
       "destination": "/index.html"
     }
