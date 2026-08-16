@@ -26,10 +26,31 @@ const DEFAULT_SETTINGS = {
 // Default preset issues inspired by user's workflow
 const DEFAULT_FAVORITES = [
   {
+    key: 'OB2601-666',
+    summary: 'FAB MISR- Reverse Engineering for BRD Documentation for Existing Account Opening System & STP Retail Payroll',
+    status: 'In Progress',
+    type: 'Epic',
+    isBillable: true
+  },
+  {
     key: 'AAIB2311-39',
-    summary: 'BA Analysis - HBD - Digital Banking Platform',
+    summary: 'BA Analysis - HBD - Bulk Opening Accounts',
     status: 'TO DO',
     type: 'Story',
+    isBillable: true
+  },
+  {
+    key: 'HDB2101-948',
+    summary: 'HDB - CA Processes Implementation & Verification',
+    status: 'IN PROGRESS',
+    type: 'Task',
+    isBillable: true
+  },
+  {
+    key: 'NXT260401-138',
+    summary: 'Bank NXT - Unsecured Credit Card Process Documentation',
+    status: 'IN PROGRESS',
+    type: 'Task',
     isBillable: true
   },
   {
@@ -37,20 +58,6 @@ const DEFAULT_FAVORITES = [
     summary: 'Corporate Account Integration & Workflows',
     status: 'IN PROGRESS',
     type: 'Task',
-    isBillable: true
-  },
-  {
-    key: 'HDB2101-948',
-    summary: 'Non Individual Account Validation Engine',
-    status: 'TO DO',
-    type: 'Bug',
-    isBillable: true
-  },
-  {
-    key: 'NXT260401-138',
-    summary: '[TC-AO-014] Verification & Business Logic QA',
-    status: 'TO DO',
-    type: 'Test',
     isBillable: true
   },
   {
@@ -105,7 +112,12 @@ class StorageService {
   getFavorites() {
     try {
       const data = localStorage.getItem(STORAGE_KEYS.FAVORITES);
-      return data ? JSON.parse(data) : DEFAULT_FAVORITES;
+      if (!data) return DEFAULT_FAVORITES;
+      const parsed = JSON.parse(data);
+      if (Array.isArray(parsed) && !parsed.some(f => f.key === 'OB2601-666')) {
+        parsed.unshift(DEFAULT_FAVORITES[0]);
+      }
+      return parsed;
     } catch {
       return DEFAULT_FAVORITES;
     }

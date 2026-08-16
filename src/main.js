@@ -113,10 +113,10 @@ function init() {
     state.selectedIssue = state.favorites[0];
   } else {
     state.selectedIssue = {
-      key: 'AAIB2311-39',
-      summary: 'BA Analysis - HBD - Digital Banking Platform',
-      status: 'TO DO',
-      type: 'Story'
+      key: 'OB2601-666',
+      summary: 'FAB MISR- Reverse Engineering for BRD Documentation for Existing Account Opening System & STP Retail Payroll',
+      status: 'In Progress',
+      type: 'Epic'
     };
   }
 
