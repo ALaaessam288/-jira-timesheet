@@ -66,6 +66,7 @@ const elements = {
   selectedIssueSummary: document.getElementById('selectedIssueSummary'),
   selectedIssueStatus: document.getElementById('selectedIssueStatus'),
   btnChangeIssue: document.getElementById('btnChangeIssue'),
+  btnNoIssue: document.getElementById('btnNoIssue'),
   btnQuickSelectIssue: document.getElementById('btnQuickSelectIssue'),
   quickFavoritesList: document.getElementById('quickFavoritesList'),
   inputHours: document.getElementById('inputHours'),
@@ -143,6 +144,14 @@ function init() {
   setupEventListeners();
 }
 
+const GENERAL_NO_ISSUE = {
+  key: 'NO-ISSUE',
+  summary: 'General Daily Work / Meetings / Internal Tasks',
+  status: 'GENERAL',
+  type: 'General',
+  isGeneral: true
+};
+
 /**
  * Event Listeners Registration
  */
@@ -172,10 +181,19 @@ function setupEventListeners() {
   elements.btnTestConnection.addEventListener('click', handleTestConnection);
   elements.btnClearData.addEventListener('click', handleClearData);
 
-  // Issue Selector Modal Triggers
+  // Issue Selector & No Issue Triggers
   elements.btnChangeIssue.addEventListener('click', () => openIssueModal('favorites'));
   elements.btnQuickSelectIssue.addEventListener('click', () => openIssueModal('all'));
   elements.btnCloseIssueModal.addEventListener('click', () => closeModal(elements.modalIssueSelector));
+
+  if (elements.btnNoIssue) {
+    elements.btnNoIssue.addEventListener('click', () => {
+      state.selectedIssue = GENERAL_NO_ISSUE;
+      renderSelectedIssue();
+      renderQuickFavorites();
+      showToast('Selected: No Specific Issue (General Work)', 'info', 2000);
+    });
+  }
 
   // Issue Search & Filtering
   elements.inputIssueSearch.addEventListener('input', debounce(handleIssueSearch, 300));
@@ -673,22 +691,26 @@ async function handleLogWorkSubmit(e) {
   let syncedToJira = false;
   let syncError = null;
 
-  try {
-    const creds = state.settings;
-    if (creds.domain && creds.email && creds.apiToken) {
-      // Call Jira API
-      await jiraApi.logWork(state.selectedIssue.key, {
-        timeSpentSeconds: totalSeconds,
-        started: jiraStartedStr,
-        comment: `${description} [${category}]`
-      }, creds);
-      syncedToJira = true;
-    } else {
-      syncedToJira = false;
+  const isGeneralIssue = state.selectedIssue.isGeneral || state.selectedIssue.key === 'NO-ISSUE';
+
+  if (!isGeneralIssue) {
+    try {
+      const creds = state.settings;
+      if (creds.domain && creds.email && creds.apiToken) {
+        // Call Jira API
+        await jiraApi.logWork(state.selectedIssue.key, {
+          timeSpentSeconds: totalSeconds,
+          started: jiraStartedStr,
+          comment: `${description} [${category}]`
+        }, creds);
+        syncedToJira = true;
+      } else {
+        syncedToJira = false;
+      }
+    } catch (err) {
+      syncError = err.message;
+      console.error('Jira sync error:', err);
     }
-  } catch (err) {
-    syncError = err.message;
-    console.error('Jira sync error:', err);
   }
 
   // Save worklog entry locally
@@ -704,8 +726,10 @@ async function handleLogWorkSubmit(e) {
     syncedToJira,
   });
 
-  // Add to recents
-  storage.addRecentIssue(state.selectedIssue);
+  // Add to recents if not general
+  if (!isGeneralIssue) {
+    storage.addRecentIssue(state.selectedIssue);
+  }
 
   // Add template if unique
   storage.addTemplate(description);
@@ -714,7 +738,9 @@ async function handleLogWorkSubmit(e) {
   elements.btnSubmitWorklog.disabled = false;
   updateSubmitButtonLabel();
 
-  if (syncedToJira) {
+  if (isGeneralIssue) {
+    showToast(`✨ Successfully logged ${formatSecondsToTime(totalSeconds)} for General Work!`, 'success', 4000);
+  } else if (syncedToJira) {
     showToast(`🚀 Successfully logged ${formatSecondsToTime(totalSeconds)} on ${state.selectedIssue.key} to Jira!`, 'success', 4000);
   } else if (syncError) {
     showToast(`Saved locally! Jira sync error: ${syncError}`, 'warning', 5000);
@@ -822,16 +848,32 @@ async function renderModalIssuesList() {
     }
   });
 
-  if (uniqueIssues.length === 0) {
-    elements.modalIssuesList.innerHTML = `
-      <div style="padding:24px; text-align:center; color:var(--text-muted); font-size:0.85rem;">
-        No issues matching "${query}". Use the direct key box above to select any Jira key directly!
-      </div>
-    `;
-    return;
-  }
-
   elements.modalIssuesList.innerHTML = '';
+
+  // Add No Specific Issue Option at the top
+  const noIssueCard = document.createElement('div');
+  const isNoIssueSelected = state.selectedIssue?.isGeneral || state.selectedIssue?.key === 'NO-ISSUE';
+  noIssueCard.className = `issue-item-card ${isNoIssueSelected ? 'selected' : ''}`;
+  noIssueCard.style.border = '1px dashed rgba(0, 199, 230, 0.4)';
+  noIssueCard.style.background = isNoIssueSelected ? 'rgba(0, 199, 230, 0.15)' : 'rgba(255, 255, 255, 0.03)';
+  noIssueCard.innerHTML = `
+    <div class="issue-item-main" style="cursor:pointer; width:100%;">
+      <div class="issue-item-header">
+        <span class="issue-item-key" style="color:var(--jira-cyan);">🚫 NO SPECIFIC ISSUE</span>
+        <span class="issue-status-tag" style="background:rgba(0,199,230,0.2); color:var(--jira-cyan);">GENERAL WORK</span>
+      </div>
+      <div class="issue-item-summary">Log general work, meetings, admin, training, or overhead without a Jira ticket</div>
+    </div>
+  `;
+  noIssueCard.onclick = () => {
+    state.selectedIssue = GENERAL_NO_ISSUE;
+    renderSelectedIssue();
+    renderQuickFavorites();
+    closeModal(elements.modalIssueSelector);
+    showToast('Selected: No Specific Issue (General Work)', 'info', 2000);
+  };
+  elements.modalIssuesList.appendChild(noIssueCard);
+
   uniqueIssues.forEach(issue => {
     const isSelected = state.selectedIssue?.key === issue.key;
     const isFav = storage.isFavorite(issue.key);
