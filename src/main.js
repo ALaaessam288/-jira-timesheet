@@ -140,10 +140,10 @@ function init() {
 }
 
 const GENERAL_NO_ISSUE = {
-  key: 'NO-ISSUE',
-  summary: 'General Daily Work / Meetings / Internal Tasks',
+  key: 'INTERNAL-WORK',
+  summary: 'General Internal Tasks / Meetings / Overhead',
   status: 'GENERAL',
-  type: 'General',
+  type: 'Activity',
   isGeneral: true
 };
 
@@ -368,6 +368,20 @@ function renderSelectedIssue() {
 
   const statusClass = (state.selectedIssue.status || '').toLowerCase().replace(/\s+/g, '-');
   elements.selectedIssueStatus.className = `issue-status-tag ${statusClass}`;
+
+  // Update Type Icon with clean Atlassian SVG
+  if (elements.selectedIssueTypeIcon) {
+    const type = (state.selectedIssue.type || '').toLowerCase();
+    if (type.includes('bug')) {
+      elements.selectedIssueTypeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="#DE350B" style="vertical-align:middle;"><rect width="16" height="16" rx="3" fill="#FFEBE6"/><circle cx="8" cy="8" r="3.5" fill="#DE350B"/></svg>`;
+    } else if (type.includes('epic')) {
+      elements.selectedIssueTypeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="#6554C0" style="vertical-align:middle;"><rect width="16" height="16" rx="3" fill="#EAE6FF"/><polygon points="8 3 13 12 3 12" fill="#6554C0"/></svg>`;
+    } else if (state.selectedIssue.isGeneral || type.includes('general') || type.includes('activity')) {
+      elements.selectedIssueTypeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="#0052CC" style="vertical-align:middle;"><rect width="16" height="16" rx="3" fill="#DEEBFF"/><rect x="4" y="5" width="8" height="6" rx="1" fill="#0052CC"/></svg>`;
+    } else {
+      elements.selectedIssueTypeIcon.innerHTML = `<svg width="14" height="14" viewBox="0 0 16 16" fill="#00875A" style="vertical-align:middle;"><rect width="16" height="16" rx="3" fill="#E3FCEF"/><rect x="4.5" y="4.5" width="7" height="7" rx="1" fill="#00875A"/></svg>`;
+    }
+  }
 }
 
 /**
@@ -378,7 +392,7 @@ function renderQuickFavorites() {
   const favs = state.favorites || [];
 
   if (favs.length === 0) {
-    elements.quickFavoritesList.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">No starred issues. Search and star issues to see them here.</span>';
+    elements.quickFavoritesList.innerHTML = '<span style="font-size:0.75rem; color:var(--text-muted);">No starred issues. Search and pin issues to access them here.</span>';
     return;
   }
 
@@ -386,12 +400,12 @@ function renderQuickFavorites() {
     const chip = document.createElement('button');
     chip.type = 'button';
     chip.className = `template-chip ${state.selectedIssue?.key === fav.key ? 'active' : ''}`;
-    chip.innerHTML = `⭐ <strong>${fav.key}</strong> - ${fav.summary.substring(0, 24)}...`;
+    chip.innerHTML = `<svg width="12" height="12" viewBox="0 0 24 24" fill="#FFAB00" style="vertical-align:middle; margin-right:4px;"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg><strong>${fav.key}</strong> - ${fav.summary.substring(0, 24)}...`;
     chip.onclick = () => {
       state.selectedIssue = fav;
       renderSelectedIssue();
       renderQuickFavorites();
-      showToast(`Selected ${fav.key}`, 'info', 1500);
+      showToast(`Selected issue: ${fav.key}`, 'info', 1500);
     };
     elements.quickFavoritesList.appendChild(chip);
   });
@@ -521,7 +535,7 @@ function updateHeroStats() {
 
   const remainingSeconds = Math.max(0, dailyGoalSeconds - totalSeconds);
   if (remainingSeconds === 0) {
-    elements.heroRemainingHoursText.textContent = `🎉 Daily target of ${dailyGoalHours}h reached!`;
+    elements.heroRemainingHoursText.textContent = `Daily target of ${dailyGoalHours}h reached`;
     elements.heroRemainingHoursText.style.color = 'var(--jira-green)';
   } else {
     const remHours = (remainingSeconds / 3600).toFixed(1);
@@ -734,13 +748,13 @@ async function handleLogWorkSubmit(e) {
   updateSubmitButtonLabel();
 
   if (isGeneralIssue) {
-    showToast(`✨ Successfully logged ${formatSecondsToTime(totalSeconds)} for General Work!`, 'success', 4000);
+    showToast(`Logged ${formatSecondsToTime(totalSeconds)} for General Activity`, 'success', 3500);
   } else if (syncedToJira) {
-    showToast(`🚀 Successfully logged ${formatSecondsToTime(totalSeconds)} on ${state.selectedIssue.key} to Jira!`, 'success', 4000);
+    showToast(`Worklog submitted successfully to Jira (${state.selectedIssue.key}, ${formatSecondsToTime(totalSeconds)})`, 'success', 4000);
   } else if (syncError) {
-    showToast(`Saved locally! Jira sync error: ${syncError}`, 'warning', 5000);
+    showToast(`Saved locally. Jira sync error: ${syncError}`, 'warning', 5000);
   } else {
-    showToast(`✨ Logged ${formatSecondsToTime(totalSeconds)} locally! (Set Jira credentials in Settings to sync live)`, 'success', 4000);
+    showToast(`Worklog saved to local timesheet (${formatSecondsToTime(totalSeconds)})`, 'success', 3500);
   }
 
   // Check if "Log another" is checked
@@ -769,18 +783,25 @@ function handleCopyStandup() {
   const totalSec = todaysLogs.reduce((acc, cur) => acc + (cur.timeSpentSeconds || 0), 0);
   const totalHours = (totalSec / 3600).toFixed(1);
 
-  let text = `📌 *Daily Standup Update* (${todayStr})\n`;
-  text += `⏱ Total Logged: ${totalHours}h\n\n`;
+  let text = `[Daily Standup Report - ${todayStr}]\n`;
+  text += `Total Logged: ${totalHours}h\n\n`;
 
   todaysLogs.forEach((log, index) => {
-    text += `${index + 1}. *[${log.issueKey}]* (${log.timeSpentFormatted}) - ${log.comment}\n`;
+    text += `${index + 1}. [${log.issueKey}] (${log.timeSpentFormatted}) - ${log.comment}\n`;
   });
 
   navigator.clipboard.writeText(text).then(() => {
-    showToast('📋 Standup summary copied to clipboard! Ready to paste into Slack/Teams/WhatsApp.', 'success', 4000);
+    showToast('Standup summary copied to clipboard', 'success', 3500);
   }).catch(() => {
-    showToast('Failed to copy to clipboard automatically.', 'error');
+    showToast('Failed to copy to clipboard automatically', 'error');
   });
+}
+
+function getStarSvg(isFav) {
+  if (isFav) {
+    return `<svg width="15" height="15" viewBox="0 0 24 24" fill="#FFAB00" stroke="#FFAB00" stroke-width="1.5"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
+  }
+  return `<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#64748B" stroke-width="1.8"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>`;
 }
 
 /**
@@ -845,19 +866,19 @@ async function renderModalIssuesList() {
 
   elements.modalIssuesList.innerHTML = '';
 
-  // Add No Specific Issue Option at the top
+  // Add General Activity Option at the top
   const noIssueCard = document.createElement('div');
-  const isNoIssueSelected = state.selectedIssue?.isGeneral || state.selectedIssue?.key === 'NO-ISSUE';
+  const isNoIssueSelected = state.selectedIssue?.isGeneral || state.selectedIssue?.key === 'INTERNAL-WORK';
   noIssueCard.className = `issue-item-card ${isNoIssueSelected ? 'selected' : ''}`;
-  noIssueCard.style.border = '1px dashed rgba(0, 199, 230, 0.4)';
-  noIssueCard.style.background = isNoIssueSelected ? 'rgba(0, 199, 230, 0.15)' : 'rgba(255, 255, 255, 0.03)';
+  noIssueCard.style.border = '1px solid rgba(0, 82, 204, 0.4)';
+  noIssueCard.style.background = isNoIssueSelected ? 'rgba(0, 82, 204, 0.15)' : 'rgba(255, 255, 255, 0.02)';
   noIssueCard.innerHTML = `
     <div class="issue-item-main" style="cursor:pointer; width:100%;">
       <div class="issue-item-header">
-        <span class="issue-item-key" style="color:var(--jira-cyan);">🚫 NO SPECIFIC ISSUE</span>
-        <span class="issue-status-tag" style="background:rgba(0,199,230,0.2); color:var(--jira-cyan);">GENERAL WORK</span>
+        <span class="issue-item-key" style="color:#579DFF;">INTERNAL-WORK</span>
+        <span class="issue-status-tag" style="background:rgba(0,82,204,0.2); color:#579DFF;">GENERAL ACTIVITY</span>
       </div>
-      <div class="issue-item-summary">Log general work, meetings, admin, training, or overhead without a Jira ticket</div>
+      <div class="issue-item-summary">Log general administrative tasks, meetings, or internal project overhead</div>
     </div>
   `;
   noIssueCard.onclick = () => {
@@ -865,7 +886,7 @@ async function renderModalIssuesList() {
     renderSelectedIssue();
     renderQuickFavorites();
     closeModal(elements.modalIssueSelector);
-    showToast('Selected: No Specific Issue (General Work)', 'info', 2000);
+    showToast('Selected: General Internal Activity', 'info', 2000);
   };
   elements.modalIssuesList.appendChild(noIssueCard);
 
@@ -884,7 +905,7 @@ async function renderModalIssuesList() {
         <div class="issue-item-summary">${issue.summary || 'No summary'}</div>
       </div>
       <button class="star-fav-btn ${isFav ? 'is-fav' : ''}" title="Star as favorite">
-        ${isFav ? '⭐' : '☆'}
+        ${getStarSvg(isFav)}
       </button>
     `;
 
@@ -902,7 +923,7 @@ async function renderModalIssuesList() {
     starBtn.onclick = (e) => {
       e.stopPropagation();
       const updatedFavState = storage.toggleFavorite(issue);
-      starBtn.textContent = updatedFavState ? '⭐' : '☆';
+      starBtn.innerHTML = getStarSvg(updatedFavState);
       starBtn.classList.toggle('is-fav', updatedFavState);
       state.favorites = storage.getFavorites();
       renderQuickFavorites();
@@ -916,7 +937,7 @@ async function renderModalIssuesList() {
 function handleApplyDirectKey() {
   const key = elements.inputDirectKey.value.trim().toUpperCase();
   if (!key) {
-    showToast('Please enter a valid Jira Key e.g. AT-100', 'warning');
+    showToast('Please enter a Jira Issue Key (e.g. AAIB2311-39)', 'warning');
     return;
   }
 
@@ -1001,7 +1022,7 @@ function renderFavoritesFullList() {
 async function handleAiEnhance() {
   const currentText = elements.inputDescription.value.trim();
   elements.btnAiEnhance.classList.add('loading');
-  elements.aiEnhanceText.textContent = 'Enhancing...';
+  elements.aiEnhanceText.textContent = 'Refining...';
 
   try {
     const res = await ollamaService.enhanceText(currentText, {
@@ -1013,12 +1034,12 @@ async function handleAiEnhance() {
     });
 
     elements.inputDescription.value = res.enhancedText;
-    showToast(`✨ Enhanced by ${res.provider}!`, 'success', 3500);
+    showToast('Description refined successfully', 'success', 3000);
   } catch (err) {
-    showToast(`AI Notice: ${err.message}`, 'warning');
+    showToast(`Notice: ${err.message}`, 'warning');
   } finally {
     elements.btnAiEnhance.classList.remove('loading');
-    elements.aiEnhanceText.textContent = 'AI Enhance';
+    elements.aiEnhanceText.textContent = 'Enhance';
   }
 }
 
