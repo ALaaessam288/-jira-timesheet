@@ -41,11 +41,6 @@ const elements = {
   settingEmail: document.getElementById('settingEmail'),
   settingApiToken: document.getElementById('settingApiToken'),
   settingDailyGoal: document.getElementById('settingDailyGoal'),
-  settingOllamaUrl: document.getElementById('settingOllamaUrl'),
-  settingOllamaModel: document.getElementById('settingOllamaModel'),
-  settingOllamaApiKey: document.getElementById('settingOllamaApiKey'),
-  btnTestOllama: document.getElementById('btnTestOllama'),
-  ollamaStatusBanner: document.getElementById('ollamaStatusBanner'),
   btnTestConnection: document.getElementById('btnTestConnection'),
   connectionStatusBanner: document.getElementById('connectionStatusBanner'),
   btnClearData: document.getElementById('btnClearData'),
@@ -1036,15 +1031,6 @@ function populateSettingsForm() {
   elements.settingEmail.value = s.email || '';
   elements.settingApiToken.value = s.apiToken || '';
   elements.settingDailyGoal.value = s.dailyGoalHours || 8;
-  if (elements.settingOllamaUrl) {
-    elements.settingOllamaUrl.value = s.ollamaEndpoint || 'http://localhost:11434';
-  }
-  if (elements.settingOllamaModel) {
-    elements.settingOllamaModel.value = s.ollamaModel || 'llama3.2';
-  }
-  if (elements.settingOllamaApiKey) {
-    elements.settingOllamaApiKey.value = s.ollamaApiKey || '';
-  }
 }
 
 function updateConnectionStatusUI() {
@@ -1066,28 +1052,6 @@ function updateConnectionStatusUI() {
       ? (parts[0][0] + parts[parts.length - 1][0]).toUpperCase() 
       : parts[0].substring(0, 2).toUpperCase();
     elements.userAvatarInitials.textContent = initials;
-  }
-}
-
-async function handleTestOllama() {
-  const url = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
-  const apiKey = elements.settingOllamaApiKey ? elements.settingOllamaApiKey.value.trim() : '';
-  elements.ollamaStatusBanner.style.display = 'block';
-  elements.ollamaStatusBanner.style.background = 'rgba(101, 84, 192, 0.2)';
-  elements.ollamaStatusBanner.innerHTML = 'Connecting to Ollama...';
-  elements.btnTestOllama.disabled = true;
-
-  try {
-    const res = await ollamaService.testConnection(url, apiKey);
-    const count = res.models.length;
-    const modelList = count > 0 ? `(${count} models: ${res.models.slice(0, 3).join(', ')})` : '';
-    elements.ollamaStatusBanner.style.background = 'rgba(54, 179, 126, 0.2)';
-    elements.ollamaStatusBanner.innerHTML = `✅ Ollama Connected! ${modelList}`;
-  } catch (err) {
-    elements.ollamaStatusBanner.style.background = 'rgba(255, 86, 48, 0.2)';
-    elements.ollamaStatusBanner.innerHTML = `⚠️ ${err.message}<br><small style="color:var(--text-secondary);">App will automatically use Smart Built-in AI fallback.</small>`;
-  } finally {
-    elements.btnTestOllama.disabled = false;
   }
 }
 
@@ -1128,9 +1092,6 @@ function handleSaveSettings(e) {
   const email = elements.settingEmail.value.trim();
   const apiToken = elements.settingApiToken.value.trim();
   const dailyGoalHours = parseInt(elements.settingDailyGoal.value, 10) || 8;
-  const ollamaEndpoint = elements.settingOllamaUrl ? elements.settingOllamaUrl.value.trim() : 'http://localhost:11434';
-  const ollamaModel = elements.settingOllamaModel ? elements.settingOllamaModel.value.trim() : 'llama3.2';
-  const ollamaApiKey = elements.settingOllamaApiKey ? elements.settingOllamaApiKey.value.trim() : '';
 
   const newSettings = {
     ...state.settings,
@@ -1138,9 +1099,6 @@ function handleSaveSettings(e) {
     email,
     apiToken,
     dailyGoalHours,
-    ollamaEndpoint,
-    ollamaModel,
-    ollamaApiKey,
     isConnected: !!(domain && email && apiToken)
   };
 
