@@ -11,7 +11,7 @@
   <link rel="apple-touch-icon" href="./icon.svg" />
   <link rel="manifest" href="./manifest.json" />
   <title>Jira Daily Worklog | Timesheet Tracker</title>
-  <script type="module" crossorigin src="./assets/index-wYaYfXBT.js"></script>
+  <script type="module" crossorigin src="./assets/index-qBdtko6K.js"></script>
   <link rel="stylesheet" crossorigin href="./assets/index-Dr_kmgrD.css">
 </head>
 <body>
@@ -143,7 +143,12 @@
                 BA Analysis - HBD - Digital Banking Platform
               </div>
             </div>
-            <button type="button" class="btn-change-issue" id="btnChangeIssue">Change</button>
+            <div style="display:flex; gap:6px;">
+              <button type="button" class="btn-change-issue" id="btnNoIssue" title="Log without a specific Jira ticket" style="background:rgba(255,255,255,0.06); border-color:rgba(255,255,255,0.15);">
+                🚫 No Issue
+              </button>
+              <button type="button" class="btn-change-issue" id="btnChangeIssue">Change</button>
+            </div>
           </div>
 
           <!-- Quick Fav Chips Strip -->
