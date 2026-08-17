@@ -135,12 +135,97 @@ class JiraApiService {
   }
 
   /**
-   * Fetch all live issues across Agile boards and history
+   * Fetch issues assigned to the current user via JQL
+   */
+  async getMyIssues(credentials) {
+    try {
+      const jql = encodeURIComponent('assignee = currentUser() order by updated desc');
+      const data = await this.request(`/rest/api/3/search/jql?jql=${jql}&maxResults=100&fields=summary,status,issuetype,project`, {
+        method: 'GET'
+      }, credentials);
+
+      if (data && Array.isArray(data.issues)) {
+        return data.issues.map(i => ({
+          key: i.key || i.id,
+          summary: i.fields?.summary || 'No summary',
+          status: i.fields?.status?.name || 'TO DO',
+          type: i.fields?.issuetype?.name || 'Task',
+          project: i.fields?.project?.name || (i.key || '').split('-')[0]
+        }));
+      }
+      return [];
+    } catch (e) {
+      console.warn('Error fetching my issues:', e.message);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch issues for a specific Jira project
+   */
+  async getProjectIssues(projectKey, credentials) {
+    if (!projectKey) return [];
+    try {
+      const jql = encodeURIComponent(`project = "${projectKey}" order by updated desc`);
+      const data = await this.request(`/rest/api/3/search/jql?jql=${jql}&maxResults=100&fields=summary,status,issuetype,project`, {
+        method: 'GET'
+      }, credentials);
+
+      if (data && Array.isArray(data.issues)) {
+        return data.issues.map(i => ({
+          key: i.key || i.id,
+          summary: i.fields?.summary || 'No summary',
+          status: i.fields?.status?.name || 'TO DO',
+          type: i.fields?.issuetype?.name || 'Task',
+          project: i.fields?.project?.name || projectKey
+        }));
+      }
+      return [];
+    } catch (e) {
+      console.warn(`Error fetching project ${projectKey} issues:`, e.message);
+      return [];
+    }
+  }
+
+  /**
+   * Fetch all live issues across JQL search, Agile boards, and history
    */
   async getAllLiveIssues(credentials) {
     const issuesMap = new Map();
 
-    // 1. Fetch from Agile Boards
+    // 1. Fetch user's assigned issues
+    try {
+      const myIssues = await this.getMyIssues(credentials);
+      myIssues.forEach(i => issuesMap.set(i.key, i));
+    } catch (e) {
+      console.warn('getMyIssues error:', e.message);
+    }
+
+    // 2. Fetch recent active issues via JQL
+    try {
+      const jql = encodeURIComponent('created is not empty order by updated desc');
+      const recentsData = await this.request(`/rest/api/3/search/jql?jql=${jql}&maxResults=100&fields=summary,status,issuetype,project`, {
+        method: 'GET'
+      }, credentials);
+
+      if (recentsData && Array.isArray(recentsData.issues)) {
+        recentsData.issues.forEach(i => {
+          if (!issuesMap.has(i.key)) {
+            issuesMap.set(i.key, {
+              key: i.key || i.id,
+              summary: i.fields?.summary || 'No summary',
+              status: i.fields?.status?.name || 'TO DO',
+              type: i.fields?.issuetype?.name || 'Task',
+              project: i.fields?.project?.name || (i.key || '').split('-')[0]
+            });
+          }
+        });
+      }
+    } catch (e) {
+      console.warn('JQL recents error:', e.message);
+    }
+
+    // 3. Fetch from Agile Boards
     try {
       const boardsData = await this.request('/rest/agile/1.0/board?maxResults=50', { method: 'GET' }, credentials);
       if (boardsData && Array.isArray(boardsData.values)) {
@@ -169,7 +254,7 @@ class JiraApiService {
       console.warn('Error fetching boards:', e.message);
     }
 
-    // 2. Also fetch from Issue Picker history
+    // 4. Also fetch from Issue Picker history
     try {
       const pickerData = await this.request('/rest/api/3/issue/picker?showSubTasks=true', { method: 'GET' }, credentials);
       if (pickerData && Array.isArray(pickerData.sections)) {
@@ -193,21 +278,50 @@ class JiraApiService {
   }
 
   /**
-   * Search Jira issues by keyword, key, or project
+   * Search Jira issues by keyword, key, or project using JQL and direct lookup
    */
   async searchIssues(query, credentials) {
     const q = (query || '').trim();
     const results = [];
+    const seenKeys = new Set();
 
     // 1. If query is a specific issue key, fetch directly
     if (q && /^[A-Z0-9]+-\d+$/i.test(q)) {
       const directIssue = await this.getIssue(q, credentials);
       if (directIssue) {
         results.push(directIssue);
+        seenKeys.add(directIssue.key);
       }
     }
 
-    // 2. Call Jira Cloud issue picker
+    // 2. Search via JQL query
+    if (q) {
+      try {
+        const jql = encodeURIComponent(`text ~ "${q}" or summary ~ "${q}" order by updated desc`);
+        const jqlData = await this.request(`/rest/api/3/search/jql?jql=${jql}&maxResults=50&fields=summary,status,issuetype,project`, {
+          method: 'GET'
+        }, credentials);
+
+        if (jqlData && Array.isArray(jqlData.issues)) {
+          jqlData.issues.forEach(i => {
+            if (!seenKeys.has(i.key)) {
+              seenKeys.add(i.key);
+              results.push({
+                key: i.key,
+                summary: i.fields?.summary || 'No summary',
+                status: i.fields?.status?.name || 'TO DO',
+                type: i.fields?.issuetype?.name || 'Task',
+                project: i.fields?.project?.name || i.key.split('-')[0]
+              });
+            }
+          });
+        }
+      } catch (e) {
+        console.warn('JQL search error:', e.message);
+      }
+    }
+
+    // 3. Also call Jira Cloud issue picker
     try {
       const pickerPath = q 
         ? `/rest/api/3/issue/picker?query=${encodeURIComponent(q)}&showSubTasks=true`
@@ -218,7 +332,8 @@ class JiraApiService {
       if (data && data.sections) {
         data.sections.forEach(section => {
           (section.issues || []).forEach(item => {
-            if (!results.some(r => r.key === item.key)) {
+            if (!seenKeys.has(item.key)) {
+              seenKeys.add(item.key);
               results.push({
                 key: item.key,
                 summary: item.summaryText || item.summary || 'Task',

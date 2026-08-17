@@ -90,6 +90,7 @@ const elements = {
   modalIssueSelector: document.getElementById('modalIssueSelector'),
   btnCloseIssueModal: document.getElementById('btnCloseIssueModal'),
   inputIssueSearch: document.getElementById('inputIssueSearch'),
+  selectProjectFilter: document.getElementById('selectProjectFilter'),
   modalIssuesList: document.getElementById('modalIssuesList'),
   inputDirectKey: document.getElementById('inputDirectKey'),
   btnApplyDirectKey: document.getElementById('btnApplyDirectKey'),
@@ -192,6 +193,11 @@ function setupEventListeners() {
 
   // Issue Search & Filtering
   elements.inputIssueSearch.addEventListener('input', debounce(handleIssueSearch, 300));
+  if (elements.selectProjectFilter) {
+    elements.selectProjectFilter.addEventListener('change', () => {
+      renderModalIssuesList();
+    });
+  }
   document.querySelectorAll('.issue-tabs-filter .filter-chip').forEach(chip => {
     chip.addEventListener('click', (e) => {
       document.querySelectorAll('.issue-tabs-filter .filter-chip').forEach(c => c.classList.remove('active'));
@@ -807,12 +813,31 @@ function getStarSvg(isFav) {
 /**
  * Issue Selector Modal & Filtering
  */
-function openIssueModal(defaultTab = 'favorites') {
+let cachedProjects = null;
+
+async function openIssueModal(defaultTab = 'my-issues') {
   state.activeFilter = defaultTab;
   document.querySelectorAll('.issue-tabs-filter .filter-chip').forEach(c => {
     c.classList.toggle('active', c.dataset.filter === defaultTab);
   });
   elements.inputIssueSearch.value = '';
+
+  // Populate projects dropdown if not loaded
+  const creds = state.settings;
+  if (creds.domain && creds.email && creds.apiToken && elements.selectProjectFilter) {
+    if (!cachedProjects) {
+      try {
+        cachedProjects = await jiraApi.getProjects(creds);
+        if (Array.isArray(cachedProjects) && cachedProjects.length > 0) {
+          elements.selectProjectFilter.innerHTML = '<option value="">All Projects (41 Projects)</option>' +
+            cachedProjects.map(p => `<option value="${p.key}">${p.key} - ${p.name}</option>`).join('');
+        }
+      } catch (e) {
+        console.warn('Projects dropdown load error:', e);
+      }
+    }
+  }
+
   renderModalIssuesList();
   openModal(elements.modalIssueSelector);
 }
@@ -822,18 +847,43 @@ function handleIssueSearch() {
 }
 
 async function renderModalIssuesList() {
-  elements.modalIssuesList.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted);">Fetching issues from Jira Cloud...</div>';
+  elements.modalIssuesList.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted);">Fetching live issues from Jira Cloud...</div>';
   const query = elements.inputIssueSearch.value.trim().toLowerCase();
+  const selectedProject = elements.selectProjectFilter ? elements.selectProjectFilter.value : '';
   let issues = [];
 
   const creds = state.settings;
   const isJiraConnected = creds.domain && creds.email && creds.apiToken;
 
-  if (state.activeFilter === 'favorites') {
+  if (selectedProject) {
+    // If a specific project is selected from dropdown, fetch issues for that project
+    if (isJiraConnected) {
+      try {
+        issues = await jiraApi.getProjectIssues(selectedProject, creds);
+      } catch (e) {
+        console.warn('Project issues load error:', e.message);
+      }
+    }
+  } else if (state.activeFilter === 'favorites') {
     issues = state.favorites || [];
   } else if (state.activeFilter === 'recent') {
     issues = state.recents || [];
-  } else if (state.activeFilter === 'my-issues' || state.activeFilter === 'all') {
+  } else if (state.activeFilter === 'my-issues') {
+    if (isJiraConnected) {
+      try {
+        if (query) {
+          issues = await jiraApi.searchIssues(query, creds);
+        } else {
+          issues = await jiraApi.getMyIssues(creds);
+        }
+      } catch (e) {
+        console.warn('Error loading my issues:', e.message);
+      }
+    }
+    // Combine with favorites
+    issues = [...issues, ...(state.favorites || [])];
+  } else {
+    // All Jira Issues
     if (isJiraConnected) {
       try {
         if (query) {
@@ -842,10 +892,9 @@ async function renderModalIssuesList() {
           issues = await jiraApi.getAllLiveIssues(creds);
         }
       } catch (e) {
-        console.warn('Error loading live issues:', e.message);
+        console.warn('Error loading all live issues:', e.message);
       }
     }
-    // Always combine with local favorites and recents
     issues = [...issues, ...(state.favorites || []), ...(state.recents || [])];
   }
 
