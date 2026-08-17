@@ -211,6 +211,10 @@ class StorageService {
     }
   }
 
+  getWorklogHistory() {
+    return this.getHistory();
+  }
+
   addWorklogToHistory(entry) {
     const history = this.getHistory();
     const newEntry = {

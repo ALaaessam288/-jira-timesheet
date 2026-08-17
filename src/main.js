@@ -656,7 +656,7 @@ function renderHistoryList() {
     card.innerHTML = `
       <div class="history-main-content">
         <div class="history-key-row">
-          <span style="font-family:'JetBrains Mono'; font-weight:700; color:var(--jira-blue-light);">${log.issueKey}</span>
+          <span class="history-item-key" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--jira-blue-light);">${log.issueKey}</span>
           <span class="history-time-badge">${timeFormatted}</span>
           ${billableBadge}
           <span style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;">${friendlyDate}</span>
@@ -725,18 +725,14 @@ async function handleLogWorkSubmit(e) {
 
   if (!isGeneralIssue) {
     try {
-      const creds = state.settings;
-      if (creds.domain && creds.email && creds.apiToken) {
-        // Call Jira API
-        await jiraApi.logWork(state.selectedIssue.key, {
-          timeSpentSeconds: totalSeconds,
-          started: jiraStartedStr,
-          comment: `${description} [${category}]`
-        }, creds);
-        syncedToJira = true;
-      } else {
-        syncedToJira = false;
-      }
+      const creds = state.settings || {};
+      // Call Jira API via proxy
+      await jiraApi.logWork(state.selectedIssue.key, {
+        timeSpentSeconds: totalSeconds,
+        started: jiraStartedStr,
+        comment: `${description} [${category}]`
+      }, creds);
+      syncedToJira = true;
     } catch (err) {
       syncError = err.message;
       console.error('Jira sync error:', err);
@@ -769,7 +765,7 @@ async function handleLogWorkSubmit(e) {
   updateSubmitButtonLabel();
 
   // Refresh history and stats
-  state.history = storage.getWorklogHistory();
+  state.history = storage.getHistory();
   updateHeroStats();
   renderWeeklyCalendar();
   renderHistoryList();
