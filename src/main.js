@@ -60,10 +60,8 @@ const elements = {
   selectedIssueKey: document.getElementById('selectedIssueKey'),
   selectedIssueSummary: document.getElementById('selectedIssueSummary'),
   selectedIssueStatus: document.getElementById('selectedIssueStatus'),
-  btnChangeIssue: document.getElementById('btnChangeIssue'),
+  selectedIssueTypeIcon: document.getElementById('selectedIssueTypeIcon'),
   btnNoIssue: document.getElementById('btnNoIssue'),
-  btnQuickSelectIssue: document.getElementById('btnQuickSelectIssue'),
-  quickFavoritesList: document.getElementById('quickFavoritesList'),
   inputHours: document.getElementById('inputHours'),
   inputMinutes: document.getElementById('inputMinutes'),
   quickTimeChips: document.getElementById('quickTimeChips'),
@@ -208,26 +206,24 @@ function setupEventListeners() {
   });
 
   // Settings Modal Triggers
-  elements.btnOpenSettings.addEventListener('click', () => openModal(elements.modalSettings));
-  elements.btnCloseSettingsModal.addEventListener('click', () => closeModal(elements.modalSettings));
-  elements.btnUserAvatar.addEventListener('click', () => openModal(elements.modalSettings));
+  if (elements.btnOpenSettings) elements.btnOpenSettings.addEventListener('click', () => openModal(elements.modalSettings));
+  if (elements.btnCloseSettingsModal) elements.btnCloseSettingsModal.addEventListener('click', () => closeModal(elements.modalSettings));
+  if (elements.btnUserAvatar) elements.btnUserAvatar.addEventListener('click', () => openModal(elements.modalSettings));
 
   // Settings Actions
-  elements.formSettings.addEventListener('submit', handleSaveSettings);
-  elements.btnTestConnection.addEventListener('click', handleTestConnection);
-  elements.btnClearData.addEventListener('click', handleClearData);
+  if (elements.formSettings) elements.formSettings.addEventListener('submit', handleSaveSettings);
+  if (elements.btnTestConnection) elements.btnTestConnection.addEventListener('click', handleTestConnection);
+  if (elements.btnClearData) elements.btnClearData.addEventListener('click', handleClearData);
 
-  // Issue Selector & No Issue Triggers
-  elements.btnChangeIssue.addEventListener('click', () => openIssueModal('favorites'));
-  elements.btnQuickSelectIssue.addEventListener('click', () => openIssueModal('all'));
-  elements.btnCloseIssueModal.addEventListener('click', () => closeModal(elements.modalIssueSelector));
+  // Issue Selector Modal Close
+  if (elements.btnCloseIssueModal) elements.btnCloseIssueModal.addEventListener('click', () => closeModal(elements.modalIssueSelector));
 
   if (elements.btnNoIssue) {
     elements.btnNoIssue.addEventListener('click', () => {
       state.selectedIssue = GENERAL_NO_ISSUE;
       renderSelectedIssue();
-      renderQuickFavorites();
-      showToast('Selected: No Specific Issue (General Work)', 'info', 2000);
+      renderPaneIssuesList();
+      showToast('Selected: Non-Ticket Activity', 'info', 2000);
     });
   }
 
@@ -412,6 +408,7 @@ function renderSelectedIssue() {
  * Render Quick Starred Issues Pills
  */
 function renderQuickFavorites() {
+  if (!elements.quickFavoritesList) return;
   elements.quickFavoritesList.innerHTML = '';
   const favs = state.favorites || [];
 
