@@ -92,8 +92,6 @@ const elements = {
   inputIssueSearch: document.getElementById('inputIssueSearch'),
   selectProjectFilter: document.getElementById('selectProjectFilter'),
   modalIssuesList: document.getElementById('modalIssuesList'),
-  inputDirectKey: document.getElementById('inputDirectKey'),
-  btnApplyDirectKey: document.getElementById('btnApplyDirectKey'),
 
   // Views & Sections
   viewTabs: document.querySelectorAll('.tab-btn'),
@@ -207,33 +205,11 @@ function setupEventListeners() {
     });
   });
 
-  // Direct Key Apply
-  elements.btnApplyDirectKey.addEventListener('click', handleApplyDirectKey);
-  elements.inputDirectKey.addEventListener('keypress', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      handleApplyDirectKey();
-    }
-  });
-
-  // Add Custom Issue from Favorites Tab
+  // Browse and Star Issues from Favorites Tab
   if (elements.btnAddCustomIssueBtn) {
     elements.btnAddCustomIssueBtn.addEventListener('click', () => {
-      const key = prompt('Enter Jira Issue Key (e.g. NXT-101):');
-      if (key && key.trim()) {
-        const summary = prompt('Enter Issue Summary/Title (optional):') || 'Custom Jira Task';
-        const newIssue = {
-          key: key.trim().toUpperCase(),
-          summary: summary.trim(),
-          status: 'TO DO',
-          type: 'Task'
-        };
-        storage.toggleFavorite(newIssue);
-        state.favorites = storage.getFavorites();
-        renderFavoritesFullList();
-        renderQuickFavorites();
-        showToast(`Added ${newIssue.key} to Starred Issues`, 'success');
-      }
+      openIssueModal('all');
+      showToast('Browse and click the star icon to pin issues', 'info', 2500);
     });
   }
 
@@ -985,44 +961,6 @@ async function renderModalIssuesList() {
 
     elements.modalIssuesList.appendChild(card);
   });
-}
-
-async function handleApplyDirectKey() {
-  const key = elements.inputDirectKey.value.trim().toUpperCase();
-  if (!key) {
-    showToast('Please enter a Jira Issue Key (e.g. AAIB2311-39)', 'warning');
-    return;
-  }
-
-  showToast(`Fetching ${key} from Jira...`, 'info', 1500);
-
-  let issue = {
-    key: key,
-    summary: `Jira Issue ${key}`,
-    status: 'TO DO',
-    type: 'Task'
-  };
-
-  // Try to fetch live issue details from Jira Cloud
-  const creds = state.settings;
-  if (creds.domain && creds.email && creds.apiToken) {
-    try {
-      const liveIssue = await jiraApi.getIssue(key, creds);
-      if (liveIssue) {
-        issue = liveIssue;
-      }
-    } catch (e) {
-      console.warn('Could not fetch direct issue from Jira:', e.message);
-    }
-  }
-
-  storage.addRecentIssue(issue);
-  state.selectedIssue = issue;
-  renderSelectedIssue();
-  renderQuickFavorites();
-  closeModal(elements.modalIssueSelector);
-  elements.inputDirectKey.value = '';
-  showToast(`Selected ${issue.key}: ${issue.summary.substring(0, 30)}...`, 'success', 2500);
 }
 
 /**
