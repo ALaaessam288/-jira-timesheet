@@ -212,18 +212,56 @@
 
               <!-- Multiple Days View -->
               <div id="containerMultiDays" style="display:none; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px;">
-                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
-                  <span style="font-size:0.75rem; color:var(--text-sub); font-weight:600;">Select Days to log hours:</span>
-                  <div style="display:flex; gap:4px; flex-wrap:wrap;">
-                    <button type="button" class="filter-chip" id="btnPresetSunThu" style="font-size:0.7rem; padding:2px 6px;" title="Sunday to Thursday work week">Sun - Thu</button>
-                    <button type="button" class="filter-chip" id="btnPresetMonFri" style="font-size:0.7rem; padding:2px 6px;" title="Monday to Friday work week">Mon - Fri</button>
-                    <button type="button" class="filter-chip" id="btnPresetAllWeek" style="font-size:0.7rem; padding:2px 6px;">All 7 Days</button>
-                    <button type="button" class="filter-chip" id="btnPresetClearDays" style="font-size:0.7rem; padding:2px 6px; color:var(--text-muted);">Clear</button>
+                <!-- Sub-mode Selector: Date Range vs Week Grid -->
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:10px; border-bottom:1px solid var(--border-subtle); padding-bottom:6px; flex-wrap:wrap; gap:4px;">
+                  <div style="display:flex; gap:4px;">
+                    <button type="button" class="filter-chip active" id="btnMultiSubRange" style="font-size:0.75rem;">📅 Date Range (From - To)</button>
+                    <button type="button" class="filter-chip" id="btnMultiSubWeek" style="font-size:0.75rem;">🗓️ Week Grid</button>
+                  </div>
+                  <button type="button" class="filter-chip" id="btnPresetClearDays" style="font-size:0.7rem; padding:2px 6px; color:var(--text-muted);">Clear</button>
+                </div>
+
+                <!-- Sub-view 1: Date Range (From - To) -->
+                <div id="multiSubRangeContainer">
+                  <div style="display:grid; grid-template-columns: 1fr 1fr; gap:8px; margin-bottom:8px;">
+                    <div>
+                      <label class="form-label" style="font-size:0.72rem; margin-bottom:3px;" for="inputRangeFrom">From Date</label>
+                      <input type="date" class="form-control" id="inputRangeFrom" style="padding:6px 8px; font-size:0.82rem;" />
+                    </div>
+                    <div>
+                      <label class="form-label" style="font-size:0.72rem; margin-bottom:3px;" for="inputRangeTo">To Date</label>
+                      <input type="date" class="form-control" id="inputRangeTo" style="padding:6px 8px; font-size:0.82rem;" />
+                    </div>
+                  </div>
+                  <div style="display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; margin-bottom:6px;">
+                    <label style="display:flex; align-items:center; gap:5px; font-size:0.75rem; color:var(--text-sub); cursor:pointer; margin:0;">
+                      <input type="checkbox" id="checkSkipWeekends" checked />
+                      <span>Skip Weekends (Fri &amp; Sat)</span>
+                    </label>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                      <button type="button" class="filter-chip" id="btnQuickThisWeek" style="font-size:0.68rem; padding:2px 6px;">This Week</button>
+                      <button type="button" class="filter-chip" id="btnQuickLastWeek" style="font-size:0.68rem; padding:2px 6px;">Last Week</button>
+                      <button type="button" class="filter-chip" id="btnQuickThisMonth" style="font-size:0.68rem; padding:2px 6px;">This Month</button>
+                    </div>
                   </div>
                 </div>
-                <div class="multi-days-grid" id="multiDaysGrid">
-                  <!-- Populated dynamically with interactive day cards -->
+
+                <!-- Sub-view 2: Week Grid -->
+                <div id="multiSubWeekContainer" style="display:none;">
+                  <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                    <span style="font-size:0.75rem; color:var(--text-sub); font-weight:600;">Select specific days:</span>
+                    <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                      <button type="button" class="filter-chip" id="btnPresetSunThu" style="font-size:0.7rem; padding:2px 6px;" title="Sunday to Thursday work week">Sun - Thu</button>
+                      <button type="button" class="filter-chip" id="btnPresetMonFri" style="font-size:0.7rem; padding:2px 6px;" title="Monday to Friday work week">Mon - Fri</button>
+                      <button type="button" class="filter-chip" id="btnPresetAllWeek" style="font-size:0.7rem; padding:2px 6px;">All 7 Days</button>
+                    </div>
+                  </div>
+                  <div class="multi-days-grid" id="multiDaysGrid">
+                    <!-- Populated dynamically with interactive day cards -->
+                  </div>
                 </div>
+
+                <!-- Summary Row -->
                 <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--text-sub); border-top:1px solid var(--border-subtle); padding-top:6px; margin-top:6px;">
                   <span>Selected: <strong id="selectedDaysCountText" style="color:#579DFF;">0 days</strong></span>
                   <span>Total hours: <strong id="multiDaysTotalHoursText" style="color:var(--jira-cyan);">0h</strong></span>

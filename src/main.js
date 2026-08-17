@@ -76,6 +76,16 @@ const elements = {
   multiDaysCountBadge: document.getElementById('multiDaysCountBadge'),
   containerSingleDay: document.getElementById('containerSingleDay'),
   containerMultiDays: document.getElementById('containerMultiDays'),
+  btnMultiSubRange: document.getElementById('btnMultiSubRange'),
+  btnMultiSubWeek: document.getElementById('btnMultiSubWeek'),
+  multiSubRangeContainer: document.getElementById('multiSubRangeContainer'),
+  multiSubWeekContainer: document.getElementById('multiSubWeekContainer'),
+  inputRangeFrom: document.getElementById('inputRangeFrom'),
+  inputRangeTo: document.getElementById('inputRangeTo'),
+  checkSkipWeekends: document.getElementById('checkSkipWeekends'),
+  btnQuickThisWeek: document.getElementById('btnQuickThisWeek'),
+  btnQuickLastWeek: document.getElementById('btnQuickLastWeek'),
+  btnQuickThisMonth: document.getElementById('btnQuickThisMonth'),
   btnPresetSunThu: document.getElementById('btnPresetSunThu'),
   btnPresetMonFri: document.getElementById('btnPresetMonFri'),
   btnPresetAllWeek: document.getElementById('btnPresetAllWeek'),
@@ -141,6 +151,12 @@ function init() {
 
   // Set default datetime to now
   elements.inputDateTime.value = toDateTimeInputString(new Date());
+
+  // Set default multi-day date range (Sunday to Thursday of current week)
+  const weekDays = getWeekRange(new Date());
+  if (elements.inputRangeFrom) elements.inputRangeFrom.value = toDateInputString(weekDays[0]);
+  if (elements.inputRangeTo) elements.inputRangeTo.value = toDateInputString(weekDays[weekDays.length - 1]);
+  calculateDatesFromRange();
 
   // Setup initial UI
   renderSelectedIssue();
@@ -322,13 +338,42 @@ function setupEventListeners() {
       if (elements.containerSingleDay) elements.containerSingleDay.style.display = 'none';
       if (elements.containerMultiDays) elements.containerMultiDays.style.display = 'block';
       if (state.selectedMultiDays.length === 0) {
-        setMultiDayPreset('sun-thu');
+        calculateDatesFromRange();
       } else {
-        renderMultiDaysGrid();
+        renderMultiDaysSummary();
       }
       updateSubmitButtonLabel();
     });
   }
+
+  // Multi-Days Sub-mode Toggle (Date Range vs Week Grid)
+  if (elements.btnMultiSubRange && elements.btnMultiSubWeek) {
+    elements.btnMultiSubRange.addEventListener('click', () => {
+      elements.btnMultiSubRange.classList.add('active');
+      elements.btnMultiSubWeek.classList.remove('active');
+      if (elements.multiSubRangeContainer) elements.multiSubRangeContainer.style.display = 'block';
+      if (elements.multiSubWeekContainer) elements.multiSubWeekContainer.style.display = 'none';
+      calculateDatesFromRange();
+    });
+
+    elements.btnMultiSubWeek.addEventListener('click', () => {
+      elements.btnMultiSubWeek.classList.add('active');
+      elements.btnMultiSubRange.classList.remove('active');
+      if (elements.multiSubRangeContainer) elements.multiSubRangeContainer.style.display = 'none';
+      if (elements.multiSubWeekContainer) elements.multiSubWeekContainer.style.display = 'block';
+      renderMultiDaysGrid();
+    });
+  }
+
+  // Range Inputs & Checkbox Listeners
+  if (elements.inputRangeFrom) elements.inputRangeFrom.addEventListener('change', calculateDatesFromRange);
+  if (elements.inputRangeTo) elements.inputRangeTo.addEventListener('change', calculateDatesFromRange);
+  if (elements.checkSkipWeekends) elements.checkSkipWeekends.addEventListener('change', calculateDatesFromRange);
+
+  // Quick Range Presets
+  if (elements.btnQuickThisWeek) elements.btnQuickThisWeek.addEventListener('click', () => setQuickRange('this-week'));
+  if (elements.btnQuickLastWeek) elements.btnQuickLastWeek.addEventListener('click', () => setQuickRange('last-week'));
+  if (elements.btnQuickThisMonth) elements.btnQuickThisMonth.addEventListener('click', () => setQuickRange('this-month'));
 
   // Multi-Days Presets
   if (elements.btnPresetSunThu) elements.btnPresetSunThu.addEventListener('click', () => setMultiDayPreset('sun-thu'));
@@ -527,6 +572,81 @@ function highlightActiveTimeChip(activePreset = null) {
   });
 }
 
+function renderMultiDaysSummary() {
+  const count = state.selectedMultiDays.length;
+  if (elements.selectedDaysCountText) {
+    elements.selectedDaysCountText.textContent = `${count} day${count === 1 ? '' : 's'}`;
+  }
+  if (elements.multiDaysCountBadge) {
+    elements.multiDaysCountBadge.textContent = count;
+    elements.multiDaysCountBadge.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+
+  const h = parseFloat(elements.inputHours.value) || 0;
+  const m = parseFloat(elements.inputMinutes.value) || 0;
+  const totalPerDaySec = toSeconds(h, m);
+  const totalAllSec = totalPerDaySec * count;
+  if (elements.multiDaysTotalHoursText) {
+    elements.multiDaysTotalHoursText.textContent = formatSecondsToTime(totalAllSec);
+  }
+}
+
+function calculateDatesFromRange() {
+  if (!elements.inputRangeFrom || !elements.inputRangeTo) return;
+  const fromVal = elements.inputRangeFrom.value;
+  const toVal = elements.inputRangeTo.value;
+  if (!fromVal || !toVal) return;
+
+  const fromDate = new Date(fromVal);
+  const toDate = new Date(toVal);
+  if (fromDate > toDate) {
+    showToast('From Date cannot be after To Date', 'warning', 2000);
+    return;
+  }
+
+  const skipWeekends = elements.checkSkipWeekends ? elements.checkSkipWeekends.checked : false;
+  const dates = [];
+  const curr = new Date(fromDate);
+
+  while (curr <= toDate) {
+    const dayOfWeek = curr.getDay(); // 0 is Sun, 5 is Fri, 6 is Sat
+    // Skip Friday (5) and Saturday (6) if enabled
+    if (!skipWeekends || (dayOfWeek !== 5 && dayOfWeek !== 6)) {
+      dates.push(toDateInputString(curr));
+    }
+    curr.setDate(curr.getDate() + 1);
+  }
+
+  state.selectedMultiDays = dates;
+  renderMultiDaysSummary();
+  updateSubmitButtonLabel();
+}
+
+function setQuickRange(rangeType) {
+  const now = new Date();
+  let fromDate = new Date();
+  let toDate = new Date();
+
+  if (rangeType === 'this-week') {
+    const weekDays = getWeekRange(now);
+    fromDate = weekDays[0];
+    toDate = weekDays[weekDays.length - 1];
+  } else if (rangeType === 'last-week') {
+    const lastWeekDate = new Date();
+    lastWeekDate.setDate(now.getDate() - 7);
+    const weekDays = getWeekRange(lastWeekDate);
+    fromDate = weekDays[0];
+    toDate = weekDays[weekDays.length - 1];
+  } else if (rangeType === 'this-month') {
+    fromDate = new Date(now.getFullYear(), now.getMonth(), 1);
+    toDate = new Date(now.getFullYear(), now.getMonth() + 1, 0);
+  }
+
+  if (elements.inputRangeFrom) elements.inputRangeFrom.value = toDateInputString(fromDate);
+  if (elements.inputRangeTo) elements.inputRangeTo.value = toDateInputString(toDate);
+  calculateDatesFromRange();
+}
+
 function renderMultiDaysGrid() {
   if (!elements.multiDaysGrid) return;
   elements.multiDaysGrid.innerHTML = '';
@@ -561,22 +681,7 @@ function renderMultiDaysGrid() {
     elements.multiDaysGrid.appendChild(card);
   });
 
-  const count = state.selectedMultiDays.length;
-  if (elements.selectedDaysCountText) {
-    elements.selectedDaysCountText.textContent = `${count} day${count === 1 ? '' : 's'}`;
-  }
-  if (elements.multiDaysCountBadge) {
-    elements.multiDaysCountBadge.textContent = count;
-    elements.multiDaysCountBadge.style.display = count > 0 ? 'inline-block' : 'none';
-  }
-
-  const h = parseFloat(elements.inputHours.value) || 0;
-  const m = parseFloat(elements.inputMinutes.value) || 0;
-  const totalPerDaySec = toSeconds(h, m);
-  const totalAllSec = totalPerDaySec * count;
-  if (elements.multiDaysTotalHoursText) {
-    elements.multiDaysTotalHoursText.textContent = formatSecondsToTime(totalAllSec);
-  }
+  renderMultiDaysSummary();
 }
 
 function setMultiDayPreset(presetType) {
@@ -597,6 +702,7 @@ function setMultiDayPreset(presetType) {
     }).map(d => toDateInputString(d));
   }
   renderMultiDaysGrid();
+  renderMultiDaysSummary();
   updateSubmitButtonLabel();
 }
 
