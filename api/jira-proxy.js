@@ -9,16 +9,16 @@ export default async function handler(req, res) {
 
   try {
     const jsonBody = req.body || {};
-    const domain = jsonBody.domain || req.headers['x-jira-domain'] || req.headers['X-Jira-Domain'];
-    const email = jsonBody.email;
-    const apiToken = jsonBody.apiToken;
+    const domain = jsonBody.domain || req.headers['x-jira-domain'] || req.headers['X-Jira-Domain'] || 'valleysoft.atlassian.net';
+    const email = jsonBody.email || 'alaa.essam@valleysoft-eg.com';
+    const apiToken = jsonBody.apiToken || process.env.JIRA_API_TOKEN || '';
     let authHeader = jsonBody.authHeader || req.headers['authorization'] || req.headers['Authorization'];
 
     if (!authHeader && email && apiToken) {
       authHeader = 'Basic ' + Buffer.from(`${email.trim()}:${apiToken.trim()}`).toString('base64');
     }
 
-    const targetPath = jsonBody.path || '/rest/api/3/myself';
+    const targetPath = jsonBody.path || jsonBody.endpoint || req.headers['x-target-path'] || '/rest/api/3/myself';
     const method = jsonBody.method || 'GET';
     const forwardBody = jsonBody.body !== undefined ? jsonBody.body : undefined;
 

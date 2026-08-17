@@ -98,6 +98,8 @@ class StorageService {
         ...parsed,
         apiToken: parsed.apiToken || DEFAULT_SETTINGS.apiToken,
         domain: parsed.domain || DEFAULT_SETTINGS.domain,
+        email: parsed.email || DEFAULT_SETTINGS.email,
+        isConnected: true
       };
     } catch {
       return DEFAULT_SETTINGS;
