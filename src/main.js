@@ -26,6 +26,7 @@ const state = {
   aiStyle: 'professional',
   isMultiDayMode: false,
   selectedMultiDays: [],
+  selectedHistoryIds: new Set(),
 };
 
 // DOM Elements Cache
@@ -738,7 +739,7 @@ function renderWeeklyCalendar() {
 }
 
 /**
- * Render History Worklogs List
+ * Render History Worklogs List with Bulk Delete
  */
 function renderHistoryList() {
   elements.historyListContainer.innerHTML = '';
@@ -762,9 +763,75 @@ function renderHistoryList() {
     return;
   }
 
+  // Bulk Action Bar
+  const bulkBar = document.createElement('div');
+  bulkBar.className = 'history-bulk-bar';
+  bulkBar.style.cssText = 'display:flex; align-items:center; justify-content:space-between; background:var(--bg-surface-elevated); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:6px 10px; margin-bottom:8px;';
+  
+  const allSelected = logs.length > 0 && logs.every(l => state.selectedHistoryIds.has(l.id));
+  const selectedCount = state.selectedHistoryIds.size;
+
+  bulkBar.innerHTML = `
+    <label style="display:flex; align-items:center; gap:6px; font-size:0.75rem; color:var(--text-sub); cursor:pointer; margin:0;">
+      <input type="checkbox" id="checkSelectAllHistory" ${allSelected ? 'checked' : ''} />
+      <span>Select All (${logs.length})</span>
+    </label>
+    <div style="display:flex; align-items:center; gap:6px;">
+      ${selectedCount > 0 ? `
+        <button type="button" class="filter-chip" id="btnDeleteSelectedHistory" style="background:var(--jira-red); color:#fff; border-color:var(--jira-red); padding:3px 8px; font-size:0.72rem; font-weight:700;">
+          🗑️ Delete Selected (${selectedCount})
+        </button>
+      ` : ''}
+    </div>
+  `;
+
+  // Select All Event
+  const checkSelectAll = bulkBar.querySelector('#checkSelectAllHistory');
+  if (checkSelectAll) {
+    checkSelectAll.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        logs.forEach(l => state.selectedHistoryIds.add(l.id));
+      } else {
+        logs.forEach(l => state.selectedHistoryIds.delete(l.id));
+      }
+      renderHistoryList();
+    });
+  }
+
+  // Delete Selected Event
+  const btnDeleteSelected = bulkBar.querySelector('#btnDeleteSelectedHistory');
+  if (btnDeleteSelected) {
+    btnDeleteSelected.addEventListener('click', async () => {
+      const selectedItems = (state.history || []).filter(l => state.selectedHistoryIds.has(l.id));
+      if (selectedItems.length === 0) return;
+
+      if (confirm(`Are you sure you want to delete ${selectedItems.length} worklog(s) from Jira & Timesheet?`)) {
+        const creds = state.settings || {};
+        showToast(`Deleting ${selectedItems.length} worklogs...`, 'info', 2000);
+
+        // Delete from Jira Cloud via API
+        await jiraApi.bulkDeleteWorklogs(selectedItems, creds);
+
+        // Delete from local storage
+        storage.deleteHistoryEntriesBulk(Array.from(state.selectedHistoryIds));
+        state.selectedHistoryIds.clear();
+
+        state.history = storage.getHistory();
+        updateHeroStats();
+        renderWeeklyCalendar();
+        renderHistoryList();
+
+        showToast(`✓ Successfully deleted ${selectedItems.length} worklog entries!`, 'success', 3500);
+      }
+    });
+  }
+
+  elements.historyListContainer.appendChild(bulkBar);
+
   logs.forEach(log => {
     const card = document.createElement('div');
-    card.className = 'history-item-card';
+    const isSelected = state.selectedHistoryIds.has(log.id);
+    card.className = `history-item-card ${isSelected ? 'selected' : ''}`;
 
     const timeFormatted = formatSecondsToTime(log.timeSpentSeconds);
     const friendlyDate = getFriendlyDateLabel(log.date || log.timestamp);
@@ -773,6 +840,9 @@ function renderHistoryList() {
       : `<span class="badge-pill-small" style="background:rgba(255,171,0,0.15); color:#ffd666;">Non-Billable</span>`;
 
     card.innerHTML = `
+      <div style="display:flex; align-items:center; padding-right:8px;">
+        <input type="checkbox" class="history-item-check" data-id="${log.id}" ${isSelected ? 'checked' : ''} style="cursor:pointer;" />
+      </div>
       <div class="history-main-content">
         <div class="history-key-row">
           <span class="history-item-key" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--jira-blue-light);">${log.issueKey}</span>
@@ -794,11 +864,36 @@ function renderHistoryList() {
       </div>
     `;
 
+    // Item Checkbox Change
+    const itemCheck = card.querySelector('.history-item-check');
+    itemCheck.addEventListener('change', (e) => {
+      if (e.target.checked) {
+        state.selectedHistoryIds.add(log.id);
+      } else {
+        state.selectedHistoryIds.delete(log.id);
+      }
+      renderHistoryList();
+    });
+
+    // Single Delete Button
     const delBtn = card.querySelector('.btn-icon-danger');
-    delBtn.onclick = () => {
-      if (confirm(`Delete log entry for ${log.issueKey} (${timeFormatted})?`)) {
+    delBtn.onclick = async () => {
+      if (confirm(`Delete log entry for ${log.issueKey} (${timeFormatted}) from Jira & Timesheet?`)) {
+        const creds = state.settings || {};
+        if (log.jiraWorklogId && log.issueKey) {
+          try {
+            await jiraApi.deleteWorklog(log.issueKey, log.jiraWorklogId, creds);
+          } catch (err) {
+            console.warn('Jira delete error:', err);
+          }
+        }
         storage.deleteHistoryEntry(log.id);
-        showToast('Worklog entry removed', 'info');
+        state.selectedHistoryIds.delete(log.id);
+        state.history = storage.getHistory();
+        updateHeroStats();
+        renderWeeklyCalendar();
+        renderHistoryList();
+        showToast('✓ Worklog entry removed from Jira & Timesheet', 'info');
       }
     };
 

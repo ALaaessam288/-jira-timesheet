@@ -384,6 +384,37 @@ class JiraApiService {
       body
     }, credentials);
   }
+
+  /**
+   * Delete single worklog from Jira Cloud
+   */
+  async deleteWorklog(issueKey, worklogId, credentials) {
+    if (!issueKey || !worklogId) return false;
+    return await this.request(`/rest/api/3/issue/${issueKey}/worklog/${worklogId}`, {
+      method: 'DELETE'
+    }, credentials);
+  }
+
+  /**
+   * Bulk delete worklogs from Jira Cloud
+   */
+  async bulkDeleteWorklogs(worklogItems, credentials) {
+    if (!worklogItems || worklogItems.length === 0) return { success: 0, failed: 0 };
+    let success = 0;
+    let failed = 0;
+    for (const item of worklogItems) {
+      try {
+        if (item.jiraWorklogId && item.issueKey) {
+          await this.deleteWorklog(item.issueKey, item.jiraWorklogId, credentials);
+        }
+        success++;
+      } catch (err) {
+        console.warn(`Failed to delete worklog ${item.jiraWorklogId} on ${item.issueKey}:`, err.message);
+        failed++;
+      }
+    }
+    return { success, failed };
+  }
 }
 
 export const jiraApi = new JiraApiService();

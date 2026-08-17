@@ -235,6 +235,15 @@ class StorageService {
     window.dispatchEvent(new CustomEvent('jira:history-updated', { detail: updated }));
   }
 
+  deleteHistoryEntriesBulk(ids) {
+    if (!ids || ids.length === 0) return;
+    const idsSet = new Set(ids);
+    const history = this.getHistory();
+    const updated = history.filter(h => !idsSet.has(h.id));
+    localStorage.setItem(STORAGE_KEYS.HISTORY, JSON.stringify(updated));
+    window.dispatchEvent(new CustomEvent('jira:history-updated', { detail: updated }));
+  }
+
   clearAllData() {
     localStorage.removeItem(STORAGE_KEYS.SETTINGS);
     localStorage.removeItem(STORAGE_KEYS.FAVORITES);
