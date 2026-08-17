@@ -292,14 +292,20 @@
 
             <!-- Work Description & AI Enhancer -->
             <div class="form-group">
-              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px; flex-wrap:wrap; gap:4px;">
                 <label class="form-label" for="inputDescription" style="margin-bottom:0;">
                   <span>Work Description</span>
                 </label>
-                <button type="button" class="btn-ai-enhance" id="btnAiEnhance" title="Refine description into professional enterprise format">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
-                  <span id="aiEnhanceText">Enhance</span>
-                </button>
+                <div style="display:flex; gap:6px; align-items:center;">
+                  <button type="button" class="btn-rovo-inline" id="btnAskRovoInline" title="Ask Atlassian Rovo AI Teammate">
+                    <span class="rovo-sparkle-icon">✨</span>
+                    <span>Ask Rovo</span>
+                  </button>
+                  <button type="button" class="btn-ai-enhance" id="btnAiEnhance" title="Refine description into professional enterprise format">
+                    <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M12 2v4M12 18v4M4.93 4.93l2.83 2.83M16.24 16.24l2.83 2.83M2 12h4M18 12h4M4.93 19.07l2.83-2.83M16.24 7.76l2.83-2.83"/></svg>
+                    <span id="aiEnhanceText">Enhance</span>
+                  </button>
+                </div>
               </div>
 
               <!-- Style Selector Chips -->
@@ -519,6 +525,87 @@
 
   <!-- Toast Alerts Container -->
   <div class="toast-container" id="toastContainer"></div>
+
+  <!-- Atlassian Rovo Floating Teammate Button -->
+  <button type="button" class="rovo-floating-btn" id="btnOpenRovo" title="Chat with Atlassian Rovo AI Teammate">
+    <div class="rovo-btn-glow"></div>
+    <div class="rovo-btn-inner">
+      <span class="rovo-orb-emoji">🤖</span>
+      <span class="rovo-btn-text">Ask Rovo</span>
+      <span class="rovo-btn-badge">AI</span>
+    </div>
+  </button>
+
+  <!-- Atlassian Rovo AI Teammate Modal / Drawer -->
+  <div class="modal-overlay" id="modalRovoChat">
+    <div class="rovo-drawer-card">
+      <!-- Header -->
+      <div class="rovo-drawer-header">
+        <div class="rovo-header-left">
+          <div class="rovo-avatar-glow">
+            <div class="rovo-avatar">🤖</div>
+          </div>
+          <div>
+            <div class="rovo-title-row">
+              <h3 class="rovo-title">Atlassian Rovo</h3>
+              <span class="rovo-pill-badge">AI Teammate</span>
+            </div>
+            <p class="rovo-subtitle">Smart Assistant for Jira Timesheets &amp; Worklogs</p>
+          </div>
+        </div>
+        <button type="button" class="btn-icon-close" id="btnCloseRovoModal" title="Close Rovo">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <!-- Context Info Banner -->
+      <div class="rovo-context-banner">
+        <div class="rovo-context-item">
+          <span class="context-lbl">Active Ticket:</span>
+          <span class="context-val" id="rovoActiveTicketKey">OB2601-666</span>
+        </div>
+        <div class="rovo-context-item">
+          <span class="context-lbl">Logged Today:</span>
+          <span class="context-val" id="rovoTodayLogged">0h / 8h</span>
+        </div>
+      </div>
+
+      <!-- Quick Prompts Row -->
+      <div class="rovo-quick-prompts">
+        <button type="button" class="rovo-prompt-chip" data-action="draft-worklog">
+          <span>✍️ Draft Ticket Worklog</span>
+        </button>
+        <button type="button" class="rovo-prompt-chip" data-action="audit-hours">
+          <span>📊 Audit Weekly Goal (40h)</span>
+        </button>
+        <button type="button" class="rovo-prompt-chip" data-action="generate-standup">
+          <span>📋 Standup Report</span>
+        </button>
+        <button type="button" class="rovo-prompt-chip" data-action="missing-days">
+          <span>💡 Find Missing Days</span>
+        </button>
+      </div>
+
+      <!-- Chat Message Stream -->
+      <div class="rovo-chat-stream" id="rovoChatStream">
+        <div class="rovo-msg-bubble rovo-assistant">
+          <div class="rovo-bubble-avatar">🤖</div>
+          <div class="rovo-bubble-body">
+            <p>Hi Alaa! I'm <strong>Rovo</strong>, your Jira Timesheet AI teammate. I can draft corporate-grade worklogs, audit your weekly 40h compliance, or generate your daily standup notes.</p>
+            <p style="margin-top:6px; font-size:0.8rem; color:var(--text-muted);">How can I help you today?</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Chat Input Bar -->
+      <div class="rovo-chat-input-bar">
+        <input type="text" class="rovo-chat-input" id="inputRovoChat" placeholder="Ask Rovo anything about your Jira work..." />
+        <button type="button" class="rovo-btn-send" id="btnRovoSend" title="Send to Rovo">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><line x1="22" y1="2" x2="11" y2="13"/><polygon points="22 2 15 22 11 13 2 9 22 2"/></svg>
+        </button>
+      </div>
+    </div>
+  </div>
 
   <!-- Mobile Bottom Sticky Navigation -->
   <nav class="mobile-bottom-nav">

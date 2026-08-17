@@ -1259,3 +1259,413 @@ textarea.form-control {
 .toast-info { border-left: 4px solid var(--jira-primary-hover); }
 .toast-content { flex: 1; font-size: 0.82rem; font-weight: 500; }
 .toast-close { background: transparent; border: none; color: var(--text-muted); cursor: pointer; }
+
+/* ==========================================================================
+   Atlassian Rovo AI Teammate Styling
+   ========================================================================== */
+
+/* Inline Ask Rovo Button */
+.btn-rovo-inline {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  background: linear-gradient(135deg, rgba(135, 119, 217, 0.25), rgba(87, 157, 255, 0.25));
+  border: 1px solid rgba(135, 119, 217, 0.5);
+  border-radius: var(--radius-xs);
+  padding: 4px 9px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #C0B6F2;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.btn-rovo-inline:hover {
+  background: linear-gradient(135deg, rgba(135, 119, 217, 0.4), rgba(87, 157, 255, 0.4));
+  border-color: #8777D9;
+  color: #FFFFFF;
+  box-shadow: 0 0 10px rgba(135, 119, 217, 0.4);
+}
+
+.rovo-sparkle-icon {
+  font-size: 0.8rem;
+}
+
+/* Floating Rovo Teammate Trigger Button */
+.rovo-floating-btn {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  z-index: 90;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.2s cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@media (max-width: 768px) {
+  .rovo-floating-btn {
+    bottom: 74px;
+    right: 16px;
+  }
+}
+
+.rovo-floating-btn:hover {
+  transform: translateY(-3px) scale(1.04);
+}
+
+.rovo-floating-btn:active {
+  transform: scale(0.96);
+}
+
+.rovo-btn-glow {
+  position: absolute;
+  inset: -3px;
+  background: linear-gradient(135deg, #8777D9, #579DFF, #6554C0);
+  border-radius: 999px;
+  filter: blur(6px);
+  opacity: 0.6;
+  animation: rovoPulse 3s infinite alternate;
+}
+
+@keyframes rovoPulse {
+  0% { opacity: 0.4; filter: blur(4px); }
+  100% { opacity: 0.85; filter: blur(8px); }
+}
+
+.rovo-btn-inner {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 7px;
+  background: linear-gradient(135deg, #1C2333, #151B28);
+  border: 1px solid rgba(135, 119, 217, 0.5);
+  border-radius: 999px;
+  padding: 8px 14px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.6);
+}
+
+.rovo-orb-emoji {
+  font-size: 1.1rem;
+}
+
+.rovo-btn-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  letter-spacing: -0.01em;
+}
+
+.rovo-btn-badge {
+  background: linear-gradient(135deg, #8777D9, #579DFF);
+  color: #FFFFFF;
+  font-size: 0.62rem;
+  font-weight: 800;
+  padding: 1px 5px;
+  border-radius: 4px;
+  text-transform: uppercase;
+}
+
+/* Rovo Drawer Card */
+.rovo-drawer-card {
+  background: #111726;
+  border: 1px solid rgba(135, 119, 217, 0.35);
+  border-radius: var(--radius-lg);
+  width: 100%;
+  max-width: 520px;
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.8), 0 0 30px rgba(135, 119, 217, 0.15);
+  overflow: hidden;
+  animation: rovoSlideUp 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes rovoSlideUp {
+  from { opacity: 0; transform: translateY(20px) scale(0.97); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.rovo-drawer-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(28, 35, 51, 0.6);
+}
+
+.rovo-header-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.rovo-avatar-glow {
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8777D9, #579DFF);
+  padding: 2px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-shadow: 0 0 12px rgba(135, 119, 217, 0.5);
+}
+
+.rovo-avatar {
+  width: 100%;
+  height: 100%;
+  background: #111726;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.1rem;
+}
+
+.rovo-title-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.rovo-title {
+  font-size: 1rem;
+  font-weight: 800;
+  color: #FFFFFF;
+  margin: 0;
+}
+
+.rovo-pill-badge {
+  background: rgba(135, 119, 217, 0.2);
+  border: 1px solid rgba(135, 119, 217, 0.4);
+  color: #C0B6F2;
+  font-size: 0.65rem;
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: 999px;
+}
+
+.rovo-subtitle {
+  font-size: 0.72rem;
+  color: var(--text-muted);
+  margin: 0;
+}
+
+/* Rovo Context Banner */
+.rovo-context-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  background: rgba(0, 0, 0, 0.25);
+  border-bottom: 1px solid var(--border-subtle);
+  padding: 8px 18px;
+  font-size: 0.75rem;
+}
+
+.rovo-context-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.rovo-context-item .context-lbl {
+  color: var(--text-muted);
+}
+
+.rovo-context-item .context-val {
+  font-family: 'JetBrains Mono', monospace;
+  font-weight: 700;
+  color: #579DFF;
+}
+
+/* Quick Prompts Row */
+.rovo-quick-prompts {
+  display: flex;
+  gap: 6px;
+  padding: 10px 18px;
+  overflow-x: auto;
+  scrollbar-width: none;
+  border-bottom: 1px solid var(--border-subtle);
+  background: rgba(17, 23, 38, 0.5);
+}
+
+.rovo-quick-prompts::-webkit-scrollbar {
+  display: none;
+}
+
+.rovo-prompt-chip {
+  flex-shrink: 0;
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--text-main);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.rovo-prompt-chip:hover {
+  background: rgba(135, 119, 217, 0.2);
+  border-color: #8777D9;
+  color: #FFFFFF;
+}
+
+/* Chat Message Stream */
+.rovo-chat-stream {
+  flex: 1;
+  overflow-y: auto;
+  padding: 14px 18px;
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  min-height: 240px;
+  max-height: 380px;
+}
+
+.rovo-msg-bubble {
+  display: flex;
+  gap: 10px;
+  max-width: 90%;
+  animation: fadeInMsg 0.2s ease;
+}
+
+@keyframes fadeInMsg {
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.rovo-msg-bubble.rovo-user {
+  align-self: flex-end;
+  flex-direction: row-reverse;
+}
+
+.rovo-bubble-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1C2333;
+  border: 1px solid rgba(135, 119, 217, 0.4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.85rem;
+  flex-shrink: 0;
+}
+
+.rovo-bubble-body {
+  background: var(--bg-surface-elevated);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  font-size: 0.82rem;
+  line-height: 1.45;
+  color: var(--text-main);
+}
+
+.rovo-msg-bubble.rovo-user .rovo-bubble-body {
+  background: var(--jira-primary);
+  border-color: var(--jira-primary);
+  color: #FFFFFF;
+  border-bottom-right-radius: var(--radius-xs);
+}
+
+.rovo-bubble-body p {
+  margin: 0 0 6px 0;
+}
+
+.rovo-bubble-body p:last-child {
+  margin-bottom: 0;
+}
+
+.rovo-bubble-body blockquote {
+  border-left: 3px solid #8777D9;
+  margin: 8px 0;
+  padding-left: 10px;
+  color: #E2E8F0;
+  font-style: italic;
+  background: rgba(135, 119, 217, 0.1);
+  padding: 6px 10px;
+  border-radius: var(--radius-xs);
+}
+
+.rovo-action-btn-row {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.rovo-action-btn {
+  background: linear-gradient(135deg, #0052CC, #0747A6);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: var(--radius-xs);
+  padding: 5px 10px;
+  font-size: 0.72rem;
+  font-weight: 700;
+  color: #FFFFFF;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  transition: var(--transition-fast);
+}
+
+.rovo-action-btn:hover {
+  background: #0065FF;
+  box-shadow: 0 0 8px rgba(0, 101, 255, 0.5);
+}
+
+/* Chat Input Bar */
+.rovo-chat-input-bar {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 18px;
+  border-top: 1px solid var(--border-subtle);
+  background: rgba(28, 35, 51, 0.8);
+}
+
+.rovo-chat-input {
+  flex: 1;
+  background: var(--bg-input);
+  border: 1px solid var(--border-subtle);
+  border-radius: 999px;
+  padding: 8px 14px;
+  font-size: 0.82rem;
+  color: #FFFFFF;
+  outline: none;
+  transition: var(--transition-fast);
+}
+
+.rovo-chat-input:focus {
+  border-color: #8777D9;
+  box-shadow: 0 0 0 2px rgba(135, 119, 217, 0.3);
+}
+
+.rovo-btn-send {
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #8777D9, #579DFF);
+  border: none;
+  color: #FFFFFF;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  flex-shrink: 0;
+}
+
+.rovo-btn-send:hover {
+  transform: scale(1.06);
+  box-shadow: 0 0 10px rgba(135, 119, 217, 0.6);
+}
+
