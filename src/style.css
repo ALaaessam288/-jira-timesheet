@@ -723,7 +723,7 @@ body {
 }
 
 /* ==========================================================================
-   FORM CONTROLS (IBM CARBON STYLE)
+   FORM CONTROLS (IBM CARBON STYLE & HIGH CONTRAST)
    ========================================================================== */
 .form-group {
   margin-bottom: 12px;
@@ -736,7 +736,7 @@ body {
   justify-content: space-between;
   font-size: 0.72rem;
   font-weight: 600;
-  color: var(--cds-text-02);
+  color: var(--cds-text-02) !important;
   margin-bottom: 4px;
   letter-spacing: 0.2px;
   width: 100%;
@@ -744,35 +744,58 @@ body {
 
 .form-label .optional {
   font-size: 0.65rem;
-  color: var(--cds-text-03);
+  color: var(--cds-text-03) !important;
   font-weight: 400;
 }
 
+input.form-control,
+textarea.form-control,
+select.form-control,
 .form-control {
   width: 100%;
-  background: var(--cds-field-01);
-  border: 1px solid var(--cds-border-subtle);
-  border-bottom: 2px solid var(--cds-border-strong);
-  border-radius: var(--radius-xs);
-  padding: 8px 10px;
-  font-size: 0.82rem;
-  color: var(--cds-text-01);
-  font-family: inherit;
-  transition: var(--transition-fast);
+  background-color: #161616 !important;
+  border: 1px solid var(--cds-border-subtle) !important;
+  border-bottom: 2px solid var(--cds-border-strong) !important;
+  border-radius: var(--radius-xs) !important;
+  padding: 8px 10px !important;
+  font-size: 0.84rem !important;
+  color: #f4f4f4 !important;
+  caret-color: #0f62fe !important;
+  font-family: inherit !important;
+  transition: var(--transition-fast) !important;
 }
 
+input.form-control:focus,
+textarea.form-control:focus,
+select.form-control:focus,
 .form-control:focus {
-  outline: none;
-  border-color: var(--cds-interactive);
-  border-bottom: 2px solid var(--cds-interactive);
-  background: var(--cds-field-hover);
-  box-shadow: 0 0 0 1px var(--cds-interactive);
+  outline: none !important;
+  border-color: var(--cds-interactive) !important;
+  border-bottom: 2px solid var(--cds-interactive) !important;
+  background-color: #262626 !important;
+  color: #ffffff !important;
+  caret-color: #0f62fe !important;
+  box-shadow: 0 0 0 1px var(--cds-interactive) !important;
+}
+
+input.form-control::placeholder,
+textarea.form-control::placeholder,
+.form-control::placeholder {
+  color: #8d8d8d !important;
+  opacity: 1 !important;
+}
+
+input.form-control::selection,
+textarea.form-control::selection,
+.form-control::selection {
+  background-color: #0f62fe !important;
+  color: #ffffff !important;
 }
 
 textarea.form-control {
-  min-height: 75px;
+  min-height: 80px !important;
   resize: vertical;
-  line-height: 1.4;
+  line-height: 1.45;
 }
 
 /* Time Spent Section */
@@ -805,9 +828,10 @@ textarea.form-control {
 
 .time-input-box input {
   width: 100%;
-  background: transparent;
-  border: none;
-  color: #fff;
+  background: transparent !important;
+  border: none !important;
+  color: #ffffff !important;
+  caret-color: #0f62fe !important;
   font-family: var(--cds-font-mono);
   font-size: 1.15rem;
   font-weight: 600;
@@ -815,7 +839,8 @@ textarea.form-control {
 }
 
 .time-input-box input:focus {
-  outline: none;
+  outline: none !important;
+  color: #ffffff !important;
 }
 
 .time-input-unit {
