@@ -426,10 +426,120 @@ body {
   color: #fff;
 }
 
-.card-title svg {
-  color: var(--jira-primary-hover);
-  width: 20px;
-  height: 20px;
+/* Jira 2-Column Log Work Layout matching authentic Jira */
+.log-work-jira-layout {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 20px;
+}
+
+@media (min-width: 900px) {
+  .log-work-jira-layout {
+    grid-template-columns: 1.05fr 0.95fr;
+    align-items: start;
+  }
+}
+
+.log-work-left-pane {
+  display: flex;
+  flex-direction: column;
+}
+
+.log-work-right-pane {
+  display: flex;
+  flex-direction: column;
+  background: rgba(0, 0, 0, 0.25);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-md);
+  padding: 16px;
+}
+
+.jira-pane-tabs {
+  display: flex;
+  gap: 4px;
+  background: var(--bg-input);
+  padding: 4px;
+  border-radius: var(--radius-sm);
+  margin-bottom: 10px;
+}
+
+.jira-pane-tab {
+  flex: 1;
+  background: transparent;
+  border: none;
+  color: var(--text-muted);
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 6px 4px;
+  border-radius: var(--radius-xs);
+  cursor: pointer;
+  text-align: center;
+  transition: var(--transition-fast);
+}
+
+.jira-pane-tab:hover {
+  color: var(--text-main);
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.jira-pane-tab.active {
+  background: var(--jira-primary);
+  color: #fff;
+}
+
+.jira-pane-issues-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  max-height: 490px;
+  overflow-y: auto;
+  padding-right: 4px;
+}
+
+.jira-pane-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 10px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.02);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: var(--transition-fast);
+  gap: 8px;
+}
+
+.jira-pane-item:hover {
+  background: rgba(255, 255, 255, 0.06);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+.jira-pane-item.selected {
+  background: rgba(0, 82, 204, 0.18);
+  border-color: var(--jira-primary);
+}
+
+.jira-pane-item-info {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  flex: 1;
+}
+
+.jira-pane-item-key {
+  font-weight: 700;
+  font-size: 0.8rem;
+  color: #579DFF;
+  white-space: nowrap;
+}
+
+.jira-pane-item-summary {
+  font-size: 0.78rem;
+  color: var(--text-main);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Form Groups & Controls */

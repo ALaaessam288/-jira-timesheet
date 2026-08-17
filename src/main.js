@@ -86,12 +86,19 @@ const elements = {
   historyFilterLabel: document.getElementById('historyFilterLabel'),
   btnCopyStandup: document.getElementById('btnCopyStandup'),
 
-  // Issue Selector Modal
+  // Issue Selector Modal & Right Pane
   modalIssueSelector: document.getElementById('modalIssueSelector'),
   btnCloseIssueModal: document.getElementById('btnCloseIssueModal'),
   inputIssueSearch: document.getElementById('inputIssueSearch'),
   selectProjectFilter: document.getElementById('selectProjectFilter'),
   modalIssuesList: document.getElementById('modalIssuesList'),
+
+  // Right-side Log Work Pane
+  inputPaneIssueSearch: document.getElementById('inputPaneIssueSearch'),
+  selectPaneProjectFilter: document.getElementById('selectPaneProjectFilter'),
+  paneIssuesList: document.getElementById('paneIssuesList'),
+  paneIssueCount: document.getElementById('paneIssueCount'),
+  paneTabsContainer: document.getElementById('paneTabsContainer'),
 
   // Views & Sections
   viewTabs: document.querySelectorAll('.tab-btn'),
@@ -133,6 +140,21 @@ function init() {
   updateConnectionStatusUI();
   populateSettingsForm();
   updateSubmitButtonLabel();
+  renderPaneIssuesList();
+
+  // Populate projects in pane filter
+  const creds = state.settings;
+  if (creds.domain && creds.email && creds.apiToken) {
+    jiraApi.getProjects(creds).then(projects => {
+      if (Array.isArray(projects) && projects.length > 0) {
+        cachedProjects = projects;
+        const optionsHtml = '<option value="">Filter by Project: All Projects (41)</option>' +
+          projects.map(p => `<option value="${p.key}">${p.key} - ${p.name}</option>`).join('');
+        if (elements.selectPaneProjectFilter) elements.selectPaneProjectFilter.innerHTML = optionsHtml;
+        if (elements.selectProjectFilter) elements.selectProjectFilter.innerHTML = optionsHtml;
+      }
+    }).catch(e => console.warn('Init projects load error:', e));
+  }
 
   // Setup Event Listeners
   setupEventListeners();
@@ -145,6 +167,8 @@ const GENERAL_NO_ISSUE = {
   type: 'Activity',
   isGeneral: true
 };
+
+let paneActiveFilter = 'my-issues';
 
 /**
  * Event Listeners Registration
@@ -162,6 +186,24 @@ function setupEventListeners() {
       } else {
         switchView(btn.dataset.view);
       }
+    });
+  });
+
+  // Right-side Log Work Pane Event Listeners
+  if (elements.inputPaneIssueSearch) {
+    elements.inputPaneIssueSearch.addEventListener('input', debounce(renderPaneIssuesList, 300));
+  }
+
+  if (elements.selectPaneProjectFilter) {
+    elements.selectPaneProjectFilter.addEventListener('change', () => renderPaneIssuesList());
+  }
+
+  document.querySelectorAll('.jira-pane-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      document.querySelectorAll('.jira-pane-tab').forEach(t => t.classList.remove('active'));
+      tab.classList.add('active');
+      paneActiveFilter = tab.dataset.filter;
+      renderPaneIssuesList();
     });
   });
 
@@ -960,6 +1002,156 @@ async function renderModalIssuesList() {
     };
 
     elements.modalIssuesList.appendChild(card);
+  });
+}
+
+/**
+ * Render Right-Side Jira Issue Selector Pane (matching authentic Jira 2-column layout)
+ */
+async function renderPaneIssuesList() {
+  if (!elements.paneIssuesList) return;
+  elements.paneIssuesList.innerHTML = '<div style="padding:16px; text-align:center; color:var(--text-muted); font-size:0.8rem;">Loading Jira issues...</div>';
+  if (elements.paneIssueCount) elements.paneIssueCount.textContent = '...';
+
+  const query = elements.inputPaneIssueSearch ? elements.inputPaneIssueSearch.value.trim().toLowerCase() : '';
+  const selectedProject = elements.selectPaneProjectFilter ? elements.selectPaneProjectFilter.value : '';
+  let issues = [];
+
+  const creds = state.settings;
+  const isJiraConnected = creds.domain && creds.email && creds.apiToken;
+
+  if (selectedProject) {
+    if (isJiraConnected) {
+      try {
+        issues = await jiraApi.getProjectIssues(selectedProject, creds);
+      } catch (e) {
+        console.warn('Pane project issues error:', e.message);
+      }
+    }
+  } else if (paneActiveFilter === 'recent') {
+    issues = state.recents || [];
+  } else if (paneActiveFilter === 'favorites') {
+    issues = state.favorites || [];
+  } else if (paneActiveFilter === 'my-issues') {
+    if (isJiraConnected) {
+      try {
+        if (query) {
+          issues = await jiraApi.searchIssues(query, creds);
+        } else {
+          issues = await jiraApi.getMyIssues(creds);
+        }
+      } catch (e) {
+        console.warn('Pane my issues error:', e.message);
+      }
+    }
+    // Also merge with favorites
+    issues = [...issues, ...(state.favorites || [])];
+  } else {
+    // All
+    if (isJiraConnected) {
+      try {
+        if (query) {
+          issues = await jiraApi.searchIssues(query, creds);
+        } else {
+          issues = await jiraApi.getAllLiveIssues(creds);
+        }
+      } catch (e) {
+        console.warn('Pane all issues error:', e.message);
+      }
+    }
+    issues = [...issues, ...(state.favorites || []), ...(state.recents || [])];
+  }
+
+  // Filter by search query if present
+  if (query) {
+    issues = issues.filter(i => 
+      (i.key && i.key.toLowerCase().includes(query)) || 
+      (i.summary && i.summary.toLowerCase().includes(query)) ||
+      (i.project && i.project.toLowerCase().includes(query))
+    );
+  }
+
+  // Deduplicate
+  const uniqueIssues = [];
+  const seenKeys = new Set();
+  issues.forEach(i => {
+    if (i && i.key && !seenKeys.has(i.key)) {
+      seenKeys.add(i.key);
+      uniqueIssues.push(i);
+    }
+  });
+
+  if (elements.paneIssueCount) {
+    elements.paneIssueCount.textContent = `${uniqueIssues.length} issues`;
+  }
+
+  elements.paneIssuesList.innerHTML = '';
+
+  if (uniqueIssues.length === 0) {
+    elements.paneIssuesList.innerHTML = `
+      <div style="padding:28px 16px; text-align:center; color:var(--text-muted); font-size:0.8rem;">
+        No issues found in this filter.<br>Try changing the tab or project filter above.
+      </div>
+    `;
+    return;
+  }
+
+  uniqueIssues.forEach(issue => {
+    const isSelected = state.selectedIssue?.key === issue.key;
+    const isFav = storage.isFavorite(issue.key);
+
+    const card = document.createElement('div');
+    card.className = `jira-pane-item ${isSelected ? 'selected' : ''}`;
+    
+    // Type Icon SVG
+    const type = (issue.type || '').toLowerCase();
+    let typeSvg = `<svg width="13" height="13" viewBox="0 0 16 16" fill="#00875A"><rect width="16" height="16" rx="2.5" fill="#E3FCEF"/><rect x="4.5" y="4.5" width="7" height="7" rx="1" fill="#00875A"/></svg>`;
+    if (type.includes('bug')) {
+      typeSvg = `<svg width="13" height="13" viewBox="0 0 16 16" fill="#DE350B"><rect width="16" height="16" rx="2.5" fill="#FFEBE6"/><circle cx="8" cy="8" r="3.5" fill="#DE350B"/></svg>`;
+    } else if (type.includes('epic')) {
+      typeSvg = `<svg width="13" height="13" viewBox="0 0 16 16" fill="#6554C0"><rect width="16" height="16" rx="2.5" fill="#EAE6FF"/><polygon points="8 3 13 12 3 12" fill="#6554C0"/></svg>`;
+    } else if (type.includes('test')) {
+      typeSvg = `<svg width="13" height="13" viewBox="0 0 16 16" fill="#00875A"><rect width="16" height="16" rx="2.5" fill="#E3FCEF"/><line x1="4" y1="8" x2="12" y2="8" stroke="#00875A" stroke-width="2"/></svg>`;
+    }
+
+    const statusClass = (issue.status || '').toLowerCase().replace(/\s+/g, '-');
+
+    card.innerHTML = `
+      <div class="jira-pane-item-info">
+        ${typeSvg}
+        <span class="jira-pane-item-key">[${issue.key}]</span>
+        <span class="jira-pane-item-summary" title="${issue.summary}">${issue.summary}</span>
+      </div>
+      <div style="display:flex; align-items:center; gap:6px; flex-shrink:0;">
+        <span class="issue-status-tag ${statusClass}" style="font-size:0.65rem; padding:2px 6px;">${issue.status || 'TO DO'}</span>
+        <button type="button" class="star-fav-btn ${isFav ? 'is-fav' : ''}" style="background:transparent; border:none; padding:2px; cursor:pointer;" title="Star issue">
+          ${getStarSvg(isFav)}
+        </button>
+      </div>
+    `;
+
+    card.onclick = (e) => {
+      if (e.target.closest('.star-fav-btn')) return;
+      state.selectedIssue = issue;
+      storage.addRecentIssue(issue);
+      renderSelectedIssue();
+      renderPaneIssuesList();
+      showToast(`Selected ${issue.key}`, 'info', 1500);
+    };
+
+    const starBtn = card.querySelector('.star-fav-btn');
+    starBtn.onclick = (e) => {
+      e.stopPropagation();
+      const updatedFav = storage.toggleFavorite(issue);
+      starBtn.innerHTML = getStarSvg(updatedFav);
+      state.favorites = storage.getFavorites();
+      renderFavoritesFullList();
+      if (paneActiveFilter === 'favorites') {
+        renderPaneIssuesList();
+      }
+    };
+
+    elements.paneIssuesList.appendChild(card);
   });
 }
 
