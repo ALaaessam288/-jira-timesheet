@@ -364,7 +364,7 @@ function switchView(viewName) {
 
   if (viewName === 'log-view') {
     if (elements.cardLogWork) elements.cardLogWork.style.display = '';
-    if (elements.cardTimesheetSummary) elements.cardTimesheetSummary.style.display = '';
+    if (elements.cardTimesheetSummary) elements.cardTimesheetSummary.style.display = 'none';
     if (elements.viewFavoritesSection) elements.viewFavoritesSection.style.display = 'none';
   } else if (viewName === 'timesheet-view') {
     if (elements.cardLogWork) elements.cardLogWork.style.display = 'none';
