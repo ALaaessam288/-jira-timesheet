@@ -363,17 +363,17 @@ function switchView(viewName) {
   });
 
   if (viewName === 'log-view') {
-    elements.cardLogWork.style.display = 'block';
-    elements.cardTimesheetSummary.style.display = 'block';
-    elements.viewFavoritesSection.style.display = 'none';
+    if (elements.cardLogWork) elements.cardLogWork.style.display = '';
+    if (elements.cardTimesheetSummary) elements.cardTimesheetSummary.style.display = '';
+    if (elements.viewFavoritesSection) elements.viewFavoritesSection.style.display = 'none';
   } else if (viewName === 'timesheet-view') {
-    elements.cardLogWork.style.display = 'none';
-    elements.cardTimesheetSummary.style.display = 'block';
-    elements.viewFavoritesSection.style.display = 'none';
+    if (elements.cardLogWork) elements.cardLogWork.style.display = 'none';
+    if (elements.cardTimesheetSummary) elements.cardTimesheetSummary.style.display = '';
+    if (elements.viewFavoritesSection) elements.viewFavoritesSection.style.display = 'none';
   } else if (viewName === 'favorites-view') {
-    elements.cardLogWork.style.display = 'none';
-    elements.cardTimesheetSummary.style.display = 'none';
-    elements.viewFavoritesSection.style.display = 'block';
+    if (elements.cardLogWork) elements.cardLogWork.style.display = 'none';
+    if (elements.cardTimesheetSummary) elements.cardTimesheetSummary.style.display = 'none';
+    if (elements.viewFavoritesSection) elements.viewFavoritesSection.style.display = 'block';
   }
 }
 
@@ -768,6 +768,12 @@ async function handleLogWorkSubmit(e) {
   elements.btnSubmitWorklog.disabled = false;
   updateSubmitButtonLabel();
 
+  // Refresh history and stats
+  state.history = storage.getWorklogHistory();
+  updateHeroStats();
+  renderWeeklyCalendar();
+  renderHistoryList();
+
   if (isGeneralIssue) {
     showToast(`Logged ${formatSecondsToTime(totalSeconds)} for General Activity`, 'success', 3500);
   } else if (syncedToJira) {
@@ -775,12 +781,11 @@ async function handleLogWorkSubmit(e) {
   } else if (syncError) {
     showToast(`Saved locally. Jira sync error: ${syncError}`, 'warning', 5000);
   } else {
-    showToast(`Worklog saved to local timesheet (${formatSecondsToTime(totalSeconds)})`, 'success', 3500);
+    showToast(`Worklog saved to timesheet (${formatSecondsToTime(totalSeconds)})`, 'success', 3500);
   }
 
   // Check if "Log another" is checked
   if (!elements.checkLogAnother.checked) {
-    // Reset description or focus
     elements.inputDescription.value = 'Development & implementation of features';
   }
 }
