@@ -24,6 +24,8 @@ const state = {
   selectedCalendarDate: null,
   isSubmitting: false,
   aiStyle: 'professional',
+  isMultiDayMode: false,
+  selectedMultiDays: [],
 };
 
 // DOM Elements Cache
@@ -68,6 +70,18 @@ const elements = {
   inputDateTime: document.getElementById('inputDateTime'),
   btnDateToday: document.getElementById('btnDateToday'),
   btnDateYesterday: document.getElementById('btnDateYesterday'),
+  btnModeSingleDay: document.getElementById('btnModeSingleDay'),
+  btnModeMultiDays: document.getElementById('btnModeMultiDays'),
+  multiDaysCountBadge: document.getElementById('multiDaysCountBadge'),
+  containerSingleDay: document.getElementById('containerSingleDay'),
+  containerMultiDays: document.getElementById('containerMultiDays'),
+  btnPresetSunThu: document.getElementById('btnPresetSunThu'),
+  btnPresetMonFri: document.getElementById('btnPresetMonFri'),
+  btnPresetAllWeek: document.getElementById('btnPresetAllWeek'),
+  btnPresetClearDays: document.getElementById('btnPresetClearDays'),
+  multiDaysGrid: document.getElementById('multiDaysGrid'),
+  selectedDaysCountText: document.getElementById('selectedDaysCountText'),
+  multiDaysTotalHoursText: document.getElementById('multiDaysTotalHoursText'),
   btnAiEnhance: document.getElementById('btnAiEnhance'),
   aiEnhanceText: document.getElementById('aiEnhanceText'),
   aiStylesBar: document.getElementById('aiStylesBar'),
@@ -289,21 +303,37 @@ function setupEventListeners() {
     elements.btnTestOllama.addEventListener('click', handleTestOllama);
   }
 
-  // Date Shortcuts
-  elements.btnDateToday.addEventListener('click', () => {
-    elements.btnDateToday.classList.add('active');
-    elements.btnDateYesterday.classList.remove('active');
-    elements.inputDateTime.value = toDateTimeInputString(new Date());
-  });
+  // Single Day vs Multi-Days Mode Switcher
+  if (elements.btnModeSingleDay && elements.btnModeMultiDays) {
+    elements.btnModeSingleDay.addEventListener('click', () => {
+      state.isMultiDayMode = false;
+      elements.btnModeSingleDay.classList.add('active');
+      elements.btnModeMultiDays.classList.remove('active');
+      if (elements.containerSingleDay) elements.containerSingleDay.style.display = 'block';
+      if (elements.containerMultiDays) elements.containerMultiDays.style.display = 'none';
+      updateSubmitButtonLabel();
+    });
 
-  elements.btnDateYesterday.addEventListener('click', () => {
-    elements.btnDateYesterday.classList.add('active');
-    elements.btnDateToday.classList.remove('active');
-    const yest = new Date();
-    yest.setDate(yest.getDate() - 1);
-    yest.setHours(9, 0, 0, 0);
-    elements.inputDateTime.value = toDateTimeInputString(yest);
-  });
+    elements.btnModeMultiDays.addEventListener('click', () => {
+      state.isMultiDayMode = true;
+      elements.btnModeMultiDays.classList.add('active');
+      elements.btnModeSingleDay.classList.remove('active');
+      if (elements.containerSingleDay) elements.containerSingleDay.style.display = 'none';
+      if (elements.containerMultiDays) elements.containerMultiDays.style.display = 'block';
+      if (state.selectedMultiDays.length === 0) {
+        setMultiDayPreset('sun-thu');
+      } else {
+        renderMultiDaysGrid();
+      }
+      updateSubmitButtonLabel();
+    });
+  }
+
+  // Multi-Days Presets
+  if (elements.btnPresetSunThu) elements.btnPresetSunThu.addEventListener('click', () => setMultiDayPreset('sun-thu'));
+  if (elements.btnPresetMonFri) elements.btnPresetMonFri.addEventListener('click', () => setMultiDayPreset('mon-fri'));
+  if (elements.btnPresetAllWeek) elements.btnPresetAllWeek.addEventListener('click', () => setMultiDayPreset('all'));
+  if (elements.btnPresetClearDays) elements.btnPresetClearDays.addEventListener('click', () => setMultiDayPreset('clear'));
 
   // Form Submit
   elements.formLogWork.addEventListener('submit', handleLogWorkSubmit);
@@ -496,11 +526,100 @@ function highlightActiveTimeChip(activePreset = null) {
   });
 }
 
+function renderMultiDaysGrid() {
+  if (!elements.multiDaysGrid) return;
+  elements.multiDaysGrid.innerHTML = '';
+
+  const weekDays = getWeekRange(new Date());
+  weekDays.forEach(day => {
+    const dayStr = toDateInputString(day);
+    const isSelected = state.selectedMultiDays.includes(dayStr);
+    const dayName = day.toLocaleDateString(undefined, { weekday: 'short' });
+    const dayNum = day.getDate();
+
+    const card = document.createElement('div');
+    card.className = `multi-day-card ${isSelected ? 'selected' : ''}`;
+    card.dataset.date = dayStr;
+    card.innerHTML = `
+      <span class="day-name">${dayName}</span>
+      <span class="day-num">${dayNum}</span>
+      <span class="check-icon">${isSelected ? '✓' : '○'}</span>
+    `;
+
+    card.addEventListener('click', () => {
+      if (state.selectedMultiDays.includes(dayStr)) {
+        state.selectedMultiDays = state.selectedMultiDays.filter(d => d !== dayStr);
+      } else {
+        state.selectedMultiDays.push(dayStr);
+        state.selectedMultiDays.sort();
+      }
+      renderMultiDaysGrid();
+      updateSubmitButtonLabel();
+    });
+
+    elements.multiDaysGrid.appendChild(card);
+  });
+
+  const count = state.selectedMultiDays.length;
+  if (elements.selectedDaysCountText) {
+    elements.selectedDaysCountText.textContent = `${count} day${count === 1 ? '' : 's'}`;
+  }
+  if (elements.multiDaysCountBadge) {
+    elements.multiDaysCountBadge.textContent = count;
+    elements.multiDaysCountBadge.style.display = count > 0 ? 'inline-block' : 'none';
+  }
+
+  const h = parseFloat(elements.inputHours.value) || 0;
+  const m = parseFloat(elements.inputMinutes.value) || 0;
+  const totalPerDaySec = toSeconds(h, m);
+  const totalAllSec = totalPerDaySec * count;
+  if (elements.multiDaysTotalHoursText) {
+    elements.multiDaysTotalHoursText.textContent = formatSecondsToTime(totalAllSec);
+  }
+}
+
+function setMultiDayPreset(presetType) {
+  const weekDays = getWeekRange(new Date());
+  if (presetType === 'clear') {
+    state.selectedMultiDays = [];
+  } else if (presetType === 'all') {
+    state.selectedMultiDays = weekDays.map(d => toDateInputString(d));
+  } else if (presetType === 'sun-thu') {
+    state.selectedMultiDays = weekDays.filter(d => {
+      const dayIndex = d.getDay();
+      return dayIndex >= 0 && dayIndex <= 4;
+    }).map(d => toDateInputString(d));
+  } else if (presetType === 'mon-fri') {
+    state.selectedMultiDays = weekDays.filter(d => {
+      const dayIndex = d.getDay();
+      return dayIndex >= 1 && dayIndex <= 5;
+    }).map(d => toDateInputString(d));
+  }
+  renderMultiDaysGrid();
+  updateSubmitButtonLabel();
+}
+
 function updateSubmitButtonLabel() {
   const h = parseInt(elements.inputHours.value, 10) || 0;
   const m = parseInt(elements.inputMinutes.value, 10) || 0;
   const timeFormatted = formatSecondsToTime(toSeconds(h, m));
-  elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted})`;
+  
+  if (state.isMultiDayMode && state.selectedMultiDays.length > 1) {
+    const totalCount = state.selectedMultiDays.length;
+    const totalSeconds = toSeconds(h, m) * totalCount;
+    const totalTimeFormatted = formatSecondsToTime(totalSeconds);
+    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted}/day × ${totalCount} days = ${totalTimeFormatted})`;
+  } else if (state.isMultiDayMode && state.selectedMultiDays.length === 1) {
+    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted} for 1 day)`;
+  } else {
+    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted})`;
+  }
+
+  // Update multi days total hours if rendered
+  if (state.isMultiDayMode && elements.multiDaysTotalHoursText) {
+    const count = state.selectedMultiDays.length;
+    elements.multiDaysTotalHoursText.textContent = formatSecondsToTime(toSeconds(h, m) * count);
+  }
 }
 
 /**
@@ -723,6 +842,75 @@ async function handleLogWorkSubmit(e) {
 
   const isGeneralIssue = state.selectedIssue.isGeneral || state.selectedIssue.key === 'NO-ISSUE';
 
+  // Multi-Days Bulk Submission
+  if (state.isMultiDayMode) {
+    if (state.selectedMultiDays.length === 0) {
+      showToast('Please select at least 1 day in Multiple Days mode.', 'warning');
+      state.isSubmitting = false;
+      elements.btnSubmitWorklog.disabled = false;
+      updateSubmitButtonLabel();
+      return;
+    }
+
+    const totalDays = state.selectedMultiDays.length;
+    elements.btnSubmitText.textContent = `Logging ${totalDays} days to Jira...`;
+
+    let successCount = 0;
+    const creds = state.settings || {};
+
+    for (let i = 0; i < state.selectedMultiDays.length; i++) {
+      const dayStr = state.selectedMultiDays[i];
+      const startedDate = new Date(`${dayStr}T09:00:00`);
+      const jiraStartedStr = toJiraDateTimeString(startedDate);
+
+      let syncedToJira = false;
+      if (!isGeneralIssue) {
+        try {
+          await jiraApi.logWork(state.selectedIssue.key, {
+            timeSpentSeconds: totalSeconds,
+            started: jiraStartedStr,
+            comment: `${description} [${category}]`
+          }, creds);
+          syncedToJira = true;
+          successCount++;
+        } catch (err) {
+          console.error(`Error logging work for ${dayStr}:`, err);
+        }
+      }
+
+      storage.addWorklogToHistory({
+        issueKey: state.selectedIssue.key,
+        issueSummary: state.selectedIssue.summary,
+        timeSpentSeconds: totalSeconds,
+        timeSpentFormatted: formatSecondsToTime(totalSeconds),
+        date: startedDate.toISOString(),
+        started: jiraStartedStr,
+        comment: description,
+        isBillable,
+        syncedToJira
+      });
+    }
+
+    if (!isGeneralIssue) {
+      storage.addRecentIssue(state.selectedIssue);
+    }
+    storage.addTemplate(description);
+
+    state.isSubmitting = false;
+    elements.btnSubmitWorklog.disabled = false;
+    updateSubmitButtonLabel();
+
+    state.history = storage.getHistory();
+    updateHeroStats();
+    renderWeeklyCalendar();
+    renderHistoryList();
+
+    const totalLoggedTime = formatSecondsToTime(totalSeconds * totalDays);
+    showToast(`✓ Logged ${totalDays} days to Jira (${totalLoggedTime} total on ${state.selectedIssue.key})!`, 'success', 4500);
+    return;
+  }
+
+  // Single Day Submission
   if (!isGeneralIssue) {
     try {
       const creds = state.settings || {};

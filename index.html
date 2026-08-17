@@ -189,16 +189,46 @@
               </div>
             </div>
 
-            <!-- Date & Time Row -->
+            <!-- Date & Schedule Selection (Single vs Multiple Days) -->
             <div class="form-group">
-              <label class="form-label" for="inputDateTime">
-                <span>Date &amp; Time Started</span>
-              </label>
-              <div style="display:flex; gap:8px; margin-bottom: 6px;">
-                <button type="button" class="filter-chip active" id="btnDateToday" style="padding:3px 8px; font-size:0.75rem;">Today</button>
-                <button type="button" class="filter-chip" id="btnDateYesterday" style="padding:3px 8px; font-size:0.75rem;">Yesterday</button>
+              <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom: 6px; flex-wrap:wrap; gap:4px;">
+                <label class="form-label" style="margin-bottom:0;">
+                  <span>Date &amp; Schedule</span>
+                </label>
+                <div class="date-mode-toggle" style="display:flex; gap:4px;">
+                  <button type="button" class="filter-chip active" id="btnModeSingleDay">Single Day</button>
+                  <button type="button" class="filter-chip" id="btnModeMultiDays">Multiple Days <span id="multiDaysCountBadge" style="display:none; background:var(--jira-primary); color:#fff; border-radius:99px; padding:0 5px; font-size:0.68rem; margin-left:3px;">0</span></button>
+                </div>
               </div>
-              <input type="datetime-local" class="form-control" id="inputDateTime" />
+
+              <!-- Single Day View -->
+              <div id="containerSingleDay">
+                <div style="display:flex; gap:6px; margin-bottom: 6px;">
+                  <button type="button" class="filter-chip active" id="btnDateToday" style="padding:3px 8px; font-size:0.75rem;">Today</button>
+                  <button type="button" class="filter-chip" id="btnDateYesterday" style="padding:3px 8px; font-size:0.75rem;">Yesterday</button>
+                </div>
+                <input type="datetime-local" class="form-control" id="inputDateTime" />
+              </div>
+
+              <!-- Multiple Days View -->
+              <div id="containerMultiDays" style="display:none; background:rgba(0,0,0,0.3); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); padding:10px 12px; margin-bottom:4px;">
+                <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:8px; flex-wrap:wrap; gap:6px;">
+                  <span style="font-size:0.75rem; color:var(--text-sub); font-weight:600;">Select Days to log hours:</span>
+                  <div style="display:flex; gap:4px; flex-wrap:wrap;">
+                    <button type="button" class="filter-chip" id="btnPresetSunThu" style="font-size:0.7rem; padding:2px 6px;" title="Sunday to Thursday work week">Sun - Thu</button>
+                    <button type="button" class="filter-chip" id="btnPresetMonFri" style="font-size:0.7rem; padding:2px 6px;" title="Monday to Friday work week">Mon - Fri</button>
+                    <button type="button" class="filter-chip" id="btnPresetAllWeek" style="font-size:0.7rem; padding:2px 6px;">All 7 Days</button>
+                    <button type="button" class="filter-chip" id="btnPresetClearDays" style="font-size:0.7rem; padding:2px 6px; color:var(--text-muted);">Clear</button>
+                  </div>
+                </div>
+                <div class="multi-days-grid" id="multiDaysGrid">
+                  <!-- Populated dynamically with interactive day cards -->
+                </div>
+                <div style="display:flex; align-items:center; justify-content:space-between; font-size:0.75rem; color:var(--text-sub); border-top:1px solid var(--border-subtle); padding-top:6px; margin-top:6px;">
+                  <span>Selected: <strong id="selectedDaysCountText" style="color:#579DFF;">0 days</strong></span>
+                  <span>Total hours: <strong id="multiDaysTotalHoursText" style="color:var(--jira-cyan);">0h</strong></span>
+                </div>
+              </div>
             </div>
 
             <!-- Category Selection: Billable vs Non-Billable -->
