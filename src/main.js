@@ -1,7 +1,6 @@
 import { storage } from './services/storage.js';
 import { jiraApi } from './services/jiraApi.js';
 import { ollamaService } from './services/ollamaService.js';
-import { rovoService } from './services/rovoService.js';
 import {
   toJiraDateTimeString,
   toDateInputString,
@@ -102,17 +101,6 @@ const elements = {
   checkLogAnother: document.getElementById('checkLogAnother'),
   btnSubmitWorklog: document.getElementById('btnSubmitWorklog'),
   btnSubmitText: document.getElementById('btnSubmitText'),
-
-  // Atlassian Rovo Elements
-  btnAskRovoInline: document.getElementById('btnAskRovoInline'),
-  btnOpenRovo: document.getElementById('btnOpenRovo'),
-  modalRovoChat: document.getElementById('modalRovoChat'),
-  btnCloseRovoModal: document.getElementById('btnCloseRovoModal'),
-  rovoActiveTicketKey: document.getElementById('rovoActiveTicketKey'),
-  rovoTodayLogged: document.getElementById('rovoTodayLogged'),
-  rovoChatStream: document.getElementById('rovoChatStream'),
-  inputRovoChat: document.getElementById('inputRovoChat'),
-  btnRovoSend: document.getElementById('btnRovoSend'),
 
   // Timesheet & Summary
   weeklyCalendarStrip: document.getElementById('weeklyCalendarStrip'),
@@ -396,50 +384,6 @@ function setupEventListeners() {
   // Form Submit
   elements.formLogWork.addEventListener('submit', handleLogWorkSubmit);
 
-  // Atlassian Rovo Event Listeners
-  if (elements.btnOpenRovo) {
-    elements.btnOpenRovo.addEventListener('click', openRovoModal);
-  }
-  if (elements.btnCloseRovoModal) {
-    elements.btnCloseRovoModal.addEventListener('click', () => closeModal(elements.modalRovoChat));
-  }
-  if (elements.btnAskRovoInline) {
-    elements.btnAskRovoInline.addEventListener('click', () => {
-      openRovoModal();
-      handleRovoAction('draft-worklog');
-    });
-  }
-
-  // Rovo Quick Prompt Chips
-  document.querySelectorAll('.rovo-prompt-chip').forEach(chip => {
-    chip.addEventListener('click', () => {
-      const action = chip.dataset.action;
-      handleRovoAction(action);
-    });
-  });
-
-  // Rovo Chat Send
-  if (elements.btnRovoSend) {
-    elements.btnRovoSend.addEventListener('click', () => {
-      const q = elements.inputRovoChat.value.trim();
-      if (q) {
-        elements.inputRovoChat.value = '';
-        executeRovoQuery(q);
-      }
-    });
-  }
-  if (elements.inputRovoChat) {
-    elements.inputRovoChat.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const q = elements.inputRovoChat.value.trim();
-        if (q) {
-          elements.inputRovoChat.value = '';
-          executeRovoQuery(q);
-        }
-      }
-    });
-  }
-
   // Copy Standup
   elements.btnCopyStandup.addEventListener('click', handleCopyStandup);
 
@@ -448,7 +392,6 @@ function setupEventListeners() {
     if (e.key === 'Escape') {
       closeModal(elements.modalSettings);
       closeModal(elements.modalIssueSelector);
-      closeModal(elements.modalRovoChat);
     }
   });
 
@@ -1683,108 +1626,6 @@ async function handleAiEnhance() {
     elements.btnAiEnhance.classList.remove('loading');
     elements.aiEnhanceText.textContent = 'Enhance';
   }
-}
-
-/**
- * Atlassian Rovo AI Teammate UI Controller
- */
-function openRovoModal() {
-  if (elements.rovoActiveTicketKey) {
-    elements.rovoActiveTicketKey.textContent = state.selectedIssue ? state.selectedIssue.key : 'None';
-  }
-  if (elements.rovoTodayLogged) {
-    const todayStr = toDateInputString(new Date());
-    const todayLogs = (state.history || []).filter(item => {
-      const itemDateStr = item.date ? item.date.substring(0, 10) : toDateInputString(new Date(item.timestamp));
-      return itemDateStr === todayStr;
-    });
-    let todaySec = 0;
-    todayLogs.forEach(l => todaySec += (l.timeSpentSeconds || 0));
-    elements.rovoTodayLogged.textContent = `${(todaySec / 3600).toFixed(1)}h / ${(state.settings?.dailyGoalHours || 8)}h`;
-  }
-  openModal(elements.modalRovoChat);
-  if (elements.inputRovoChat) elements.inputRovoChat.focus();
-}
-
-function appendRovoMessage(sender, text, actionText = null) {
-  if (!elements.rovoChatStream) return;
-
-  const bubble = document.createElement('div');
-  bubble.className = `rovo-msg-bubble rovo-${sender}`;
-
-  const isAssistant = sender === 'assistant';
-  const avatarHtml = isAssistant ? '<div class="rovo-bubble-avatar">🤖</div>' : '<div class="rovo-bubble-avatar">👤</div>';
-
-  // Format markdown-like text
-  let formattedHtml = (text || '')
-    .replace(/^### (.*$)/gim, '<strong style="color:#579DFF; font-size:0.9rem; display:block; margin-bottom:4px;">$1</strong>')
-    .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
-    .replace(/`(.*?)`/g, '<code style="background:rgba(255,255,255,0.1); padding:1px 4px; border-radius:3px; font-family:JetBrains Mono;">$1</code>')
-    .replace(/\n/g, '<br/>');
-
-  let actionBtnHtml = '';
-  if (actionText) {
-    actionBtnHtml = `
-      <div class="rovo-action-btn-row">
-        <button type="button" class="rovo-action-btn apply-desc-btn">
-          <span>✨ Apply to Work Description</span>
-        </button>
-      </div>
-    `;
-  }
-
-  bubble.innerHTML = `
-    ${avatarHtml}
-    <div class="rovo-bubble-body">
-      <div>${formattedHtml}</div>
-      ${actionBtnHtml}
-    </div>
-  `;
-
-  if (actionText) {
-    const applyBtn = bubble.querySelector('.apply-desc-btn');
-    if (applyBtn) {
-      applyBtn.addEventListener('click', () => {
-        elements.inputDescription.value = actionText;
-        closeModal(elements.modalRovoChat);
-        switchView('log-view');
-        showToast('✓ Applied Rovo worklog to description!', 'success', 3000);
-      });
-    }
-  }
-
-  elements.rovoChatStream.appendChild(bubble);
-  elements.rovoChatStream.scrollTop = elements.rovoChatStream.scrollHeight;
-}
-
-async function handleRovoAction(actionType) {
-  if (actionType === 'draft-worklog') {
-    appendRovoMessage('user', 'Draft a worklog description for my current ticket.');
-    const res = await rovoService.draftIssueWorklog(state.selectedIssue, elements.inputDescription.value);
-    appendRovoMessage('assistant', res.reply, res.actionText);
-  } else if (actionType === 'audit-hours') {
-    appendRovoMessage('user', 'Audit my weekly hours vs 40h goal.');
-    const res = rovoService.auditWeeklyHours(state.history, state.settings?.dailyGoalHours || 8);
-    appendRovoMessage('assistant', res.reply, res.actionText);
-  } else if (actionType === 'generate-standup') {
-    appendRovoMessage('user', 'Generate my Daily Standup report.');
-    const res = rovoService.generateStandup(state.history, state.selectedIssue);
-    appendRovoMessage('assistant', res.reply, res.actionText);
-  } else if (actionType === 'missing-days') {
-    appendRovoMessage('user', 'Find missing worklog days this week.');
-    const res = rovoService.findMissingDays(state.history);
-    appendRovoMessage('assistant', res.reply, res.actionText);
-  }
-}
-
-async function executeRovoQuery(queryText) {
-  appendRovoMessage('user', queryText);
-  const res = await rovoService.processQuery(queryText, {
-    currentIssue: state.selectedIssue,
-    history: state.history,
-    dailyGoal: state.settings?.dailyGoalHours || 8
-  });
-  appendRovoMessage('assistant', res.reply, res.actionText);
 }
 
 /**
