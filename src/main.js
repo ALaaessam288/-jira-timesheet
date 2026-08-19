@@ -1040,6 +1040,19 @@ function renderHistoryList() {
       ? `<span class="badge-pill-small billable">Billable</span>` 
       : `<span class="badge-pill-small" style="background:rgba(255,171,0,0.15); color:#ffd666;">Non-Billable</span>`;
 
+    const isSynced = log.syncedToJira || log.jiraWorklogId;
+    const syncBadge = isSynced
+      ? `<span class="badge-pill-small" style="background:rgba(54,179,126,0.15); color:var(--jira-green); font-weight:700;">✓ Synced to Jira</span>`
+      : `<span class="badge-pill-small" style="background:rgba(255,171,0,0.15); color:#ffd666;">Local Only</span>`;
+
+    const jiraDomain = state.settings?.domain || 'valleysoft.atlassian.net';
+    const jiraLinkHtml = log.issueKey && !log.issueKey.startsWith('NO-ISSUE')
+      ? `<a href="https://${jiraDomain}/browse/${log.issueKey}" target="_blank" rel="noopener noreferrer" style="font-size:0.75rem; color:var(--jira-blue-light); text-decoration:none; display:inline-flex; align-items:center; gap:3px; margin-top:4px; font-weight:600;" title="Open issue directly in Jira Cloud">
+          <span>Open in Jira Cloud</span>
+          <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        </a>`
+      : '';
+
     card.innerHTML = `
       <div style="display:flex; align-items:center; padding-right:8px;">
         <input type="checkbox" class="history-item-check" data-id="${log.id}" ${isSelected ? 'checked' : ''} style="cursor:pointer;" />
@@ -1049,17 +1062,19 @@ function renderHistoryList() {
           <span class="history-item-key" style="font-family:'JetBrains Mono'; font-weight:700; color:var(--jira-blue-light);">${log.issueKey}</span>
           <span class="history-time-badge">${timeFormatted}</span>
           ${billableBadge}
+          ${syncBadge}
           <span style="font-size:0.75rem; color:var(--text-muted); margin-left:auto;">${friendlyDate}</span>
         </div>
-        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary);">
+        <div style="font-size:0.85rem; font-weight:600; color:var(--text-primary); margin-top:2px;">
           ${log.issueSummary || 'No summary'}
         </div>
         <div class="history-comment">
           "${log.comment || 'No description'}"
         </div>
+        ${jiraLinkHtml}
       </div>
       <div class="history-actions">
-        <button class="btn-icon-danger" title="Delete worklog entry" data-id="${log.id}">
+        <button class="btn-icon-danger" title="Delete worklog entry from Jira & Timesheet" data-id="${log.id}">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="3 6 5 6 21 6"/><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"/></svg>
         </button>
       </div>
