@@ -425,95 +425,253 @@
     </section>
   </div>
 
-  <!-- Issue Selector Modal -->
+  <!-- Issue Selector Modal (Centered & Enhanced UI/UX) -->
   <div class="modal-overlay" id="modalIssueSelector">
-    <div class="modal-dialog">
+    <div class="modal-dialog modal-dialog-lg">
+      <div class="modal-accent-bar"></div>
       <div class="modal-header">
-        <h3>Select Jira Issue</h3>
-        <button class="modal-close-btn" id="btnCloseIssueModal">&times;</button>
+        <div class="modal-header-info">
+          <div class="modal-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title">Select Jira Issue</h3>
+            <p class="modal-subtitle">Browse verified Jira cloud tickets or add custom task</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseIssueModal" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
-      <div class="issue-search-box" style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:8px 12px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); margin-bottom:12px;">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
-        <input type="text" class="form-control" id="inputIssueSearch" placeholder="Search verified issues by key, summary, or project..." style="border:none; padding:0; background:transparent;" />
+      <div class="modal-body">
+        <div class="issue-search-box" style="display:flex; align-items:center; gap:8px; background:var(--bg-input); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid var(--border-subtle); margin-bottom:12px;">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#94A3B8" stroke-width="2"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+          <input type="text" class="form-control" id="inputIssueSearch" placeholder="Search verified issues by key, summary, or project..." style="border:none; padding:0; background:transparent;" />
+        </div>
+
+        <div class="issue-tabs-filter" style="display:flex; gap:6px; margin-bottom:12px; overflow-x:auto;">
+          <button class="filter-chip active" data-filter="my-issues">Assigned to Me</button>
+          <button class="filter-chip" data-filter="all">All Jira Issues (Live)</button>
+          <button class="filter-chip" data-filter="favorites">Starred</button>
+          <button class="filter-chip" data-filter="recent">Recent</button>
+        </div>
+
+        <!-- Project Filter Dropdown -->
+        <div style="margin-bottom: 12px;">
+          <select class="form-control" id="selectProjectFilter" style="font-size:0.82rem; padding:9px 12px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-main); width:100%;">
+            <option value="">Filter by Project: All Projects (41)</option>
+          </select>
+        </div>
+
+        <div class="issues-scroll-list" id="modalIssuesList" style="max-height: 320px;">
+          <!-- Populated via JS -->
+        </div>
       </div>
 
-      <div class="issue-tabs-filter" style="display:flex; gap:6px; margin-bottom:10px; overflow-x:auto;">
-        <button class="filter-chip active" data-filter="my-issues">Assigned to Me</button>
-        <button class="filter-chip" data-filter="all">All Jira Issues (Live)</button>
-        <button class="filter-chip" data-filter="favorites">Starred</button>
-        <button class="filter-chip" data-filter="recent">Recent</button>
-      </div>
-
-      <!-- Project Filter Dropdown -->
-      <div style="margin-bottom: 12px;">
-        <select class="form-control" id="selectProjectFilter" style="font-size:0.82rem; padding:8px 10px; background:var(--bg-input); border:1px solid var(--border-subtle); border-radius:var(--radius-sm); color:var(--text-main); width:100%;">
-          <option value="">Filter by Project: All Projects (41)</option>
-        </select>
-      </div>
-
-      <div class="issues-scroll-list" id="modalIssuesList">
-        <!-- Populated via JS -->
+      <div class="modal-footer" style="justify-content: space-between;">
+        <button type="button" class="btn-modal-cancel" id="btnOpenAddCustomFromSelector" style="background: rgba(0, 82, 204, 0.15); border-color: rgba(0, 82, 204, 0.4); color: #579DFF;">
+          + Add Custom Task / Issue
+        </button>
+        <button type="button" class="btn-modal-cancel" id="btnCloseIssueModalFooter">
+          Close
+        </button>
       </div>
     </div>
   </div>
 
-  <!-- Settings & Jira Connection Modal -->
+  <!-- Settings & Jira Connection Modal (Centered & Enhanced UI/UX) -->
   <div class="modal-overlay" id="modalSettings">
     <div class="modal-dialog">
+      <div class="modal-accent-bar"></div>
       <div class="modal-header">
-        <h3>Jira Connection & Settings</h3>
-        <button class="modal-close-btn" id="btnCloseSettingsModal">&times;</button>
+        <div class="modal-header-info">
+          <div class="modal-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title">Jira Connection &amp; Settings</h3>
+            <p class="modal-subtitle">Configure Jira Cloud credentials and daily worklog targets</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseSettingsModal" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
       </div>
 
       <form id="formSettings">
-        <div class="form-group">
-          <label class="form-label" for="settingDomain">Jira Cloud Domain</label>
-          <input type="text" class="form-control" id="settingDomain" placeholder="valleysoft.atlassian.net" value="valleysoft.atlassian.net" required />
-          <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
-            e.g. <code>valleysoft.atlassian.net</code> or your organization Atlassian domain
-          </p>
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="settingDomain">Jira Cloud Domain *</label>
+            <input type="text" class="form-control" id="settingDomain" placeholder="valleysoft.atlassian.net" value="valleysoft.atlassian.net" required />
+            <p style="font-size:0.75rem; color:var(--text-muted); margin-top:4px;">
+              e.g. <code>valleysoft.atlassian.net</code>
+            </p>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="settingEmail">Jira User Email *</label>
+            <input type="email" class="form-control" id="settingEmail" placeholder="your.name@valleysoft.com" required />
+          </div>
+
+          <div class="form-group">
+            <div style="display:flex; align-items:center; justify-content:space-between; margin-bottom:6px;">
+              <label class="form-label" for="settingApiToken" style="margin-bottom:0;">Atlassian API Token *</label>
+              <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" style="color:var(--jira-primary-hover); text-decoration:none; font-size:0.75rem;">Generate Token &nearr;</a>
+            </div>
+            <div style="position:relative;">
+              <input type="password" class="form-control" id="settingApiToken" placeholder="Paste your Jira API Token" style="padding-right: 40px;" required />
+              <button type="button" id="btnToggleTokenVisibility" title="Toggle visibility" style="position:absolute; right:10px; top:50%; transform:translateY(-50%); background:none; border:none; color:var(--text-muted); cursor:pointer; font-size:0.85rem;">👁️</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="settingDailyGoal">Daily Hours Target (Hours/Day)</label>
+            <input type="number" class="form-control" id="settingDailyGoal" min="1" max="24" value="8" />
+          </div>
+
+          <!-- Connection Test Status Banner -->
+          <div id="connectionStatusBanner" style="display:none; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px; font-size:0.85rem;"></div>
+
+          <hr style="border:0; border-top:1px solid var(--border-subtle); margin:16px 0;" />
+
+          <div style="display:flex; justify-content:space-between; align-items:center;">
+            <div>
+              <div style="font-size:0.82rem; font-weight:700; color:#fff;">Reset Stored Data</div>
+              <div style="font-size:0.75rem; color:var(--text-muted);">Clear cached worklogs, starred issues &amp; settings</div>
+            </div>
+            <button type="button" class="btn-icon-danger" id="btnClearData" style="font-size:0.8rem; padding:7px 14px; border:1px solid rgba(255,86,48,0.3); border-radius:var(--radius-xs); color:var(--jira-red);">
+              Clear All Data
+            </button>
+          </div>
         </div>
 
-        <div class="form-group">
-          <label class="form-label" for="settingEmail">Jira Email</label>
-          <input type="email" class="form-control" id="settingEmail" placeholder="your.name@valleysoft.com" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="settingApiToken">
-            <span>Atlassian API Token</span>
-            <a href="https://id.atlassian.com/manage-profile/security/api-tokens" target="_blank" style="color:var(--jira-primary-hover); text-decoration:none; font-size:0.75rem;">Generate Token &nearr;</a>
-          </label>
-          <input type="password" class="form-control" id="settingApiToken" placeholder="Paste your Jira API Token" />
-        </div>
-
-        <div class="form-group">
-          <label class="form-label" for="settingDailyGoal">Daily Hours Target</label>
-          <input type="number" class="form-control" id="settingDailyGoal" min="1" max="24" value="8" />
-        </div>
-
-        <!-- Connection Test Status Banner -->
-        <div id="connectionStatusBanner" style="display:none; padding:12px; border-radius:var(--radius-sm); margin-bottom:16px; font-size:0.85rem;"></div>
-
-        <div style="display:flex; gap:10px; margin-top:20px;">
-          <button type="button" class="header-btn" id="btnTestConnection" style="flex:1; justify-content:center;">
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" id="btnCancelSettings">
+            Cancel
+          </button>
+          <button type="button" class="header-btn" id="btnTestConnection" style="padding:9px 16px;">
             Test Connection
           </button>
-          <button type="submit" class="btn-primary-submit" style="flex:1;">
+          <button type="submit" class="btn-modal-primary" id="btnSaveSettings">
             Save Settings
           </button>
         </div>
+      </form>
+    </div>
+  </div>
 
-        <hr style="border:0; border-top:1px solid var(--border-subtle); margin:20px 0;" />
+  <!-- Add / Update Custom Issue Modal (Centered & Enhanced UI/UX) -->
+  <div class="modal-overlay" id="modalAddCustomTicket">
+    <div class="modal-dialog">
+      <div class="modal-accent-bar"></div>
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-icon-badge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="12" y1="5" x2="12" y2="19"/><line x1="5" y1="12" x2="19" y2="12"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title" id="customTicketModalTitle">Add Custom Issue / Task</h3>
+            <p class="modal-subtitle">Create or update a custom task for fast timesheet logging</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseCustomTicketModal" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
 
-        <div style="display:flex; justify-content:space-between; align-items:center;">
-          <span style="font-size:0.8rem; color:var(--text-muted);">Reset stored data</span>
-          <button type="button" class="btn-icon-danger" id="btnClearData" style="font-size:0.8rem; padding:6px 12px; border:1px solid rgba(255,86,48,0.3); border-radius:var(--radius-xs); color:var(--jira-red);">
-            Clear All Data
+      <form id="formAddCustomTicket">
+        <div class="modal-body">
+          <div class="form-group">
+            <label class="form-label" for="inputCustomTicketKey">Issue Key / Code *</label>
+            <input type="text" class="form-control" id="inputCustomTicketKey" placeholder="e.g. OB2601-666, FIN-101, or GENERAL" required style="font-family:'JetBrains Mono',monospace; text-transform:uppercase;" />
+            <div style="display:flex; gap:6px; margin-top:6px; flex-wrap:wrap;">
+              <span style="font-size:0.72rem; color:var(--text-muted); align-self:center;">Quick Prefix:</span>
+              <button type="button" class="template-chip custom-prefix-chip" data-prefix="OB2601-">OB2601-</button>
+              <button type="button" class="template-chip custom-prefix-chip" data-prefix="FIN-">FIN-</button>
+              <button type="button" class="template-chip custom-prefix-chip" data-prefix="PROJ-">PROJ-</button>
+              <button type="button" class="template-chip custom-prefix-chip" data-prefix="GEN-">GEN-</button>
+            </div>
+          </div>
+
+          <div class="form-group">
+            <label class="form-label" for="inputCustomTicketSummary">Issue Summary / Name *</label>
+            <input type="text" class="form-control" id="inputCustomTicketSummary" placeholder="e.g. Daily Standup, Core Analysis, Bug Fix..." required />
+          </div>
+
+          <div style="display:grid; grid-template-columns:1fr 1fr; gap:12px;">
+            <div class="form-group">
+              <label class="form-label" for="selectCustomTicketType">Issue Type</label>
+              <select class="form-control" id="selectCustomTicketType">
+                <option value="Task">📌 Task</option>
+                <option value="Bug">🐛 Bug</option>
+                <option value="Story">📖 Story</option>
+                <option value="Meeting">👥 Meeting</option>
+                <option value="Support">🛠️ Support</option>
+                <option value="Documentation">📝 Docs</option>
+              </select>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="inputCustomTicketOrder">Order / Priority</label>
+              <input type="number" class="form-control" id="inputCustomTicketOrder" min="1" max="99" value="1" />
+              <span style="font-size:0.7rem; color:var(--text-muted); display:block; margin-top:2px;">Lower numbers appear first</span>
+            </div>
+          </div>
+
+          <div style="display:flex; align-items:center; gap:8px; margin-top:8px; background:rgba(0,82,204,0.1); padding:10px 14px; border-radius:var(--radius-sm); border:1px solid rgba(0,82,204,0.25);">
+            <input type="checkbox" id="checkCustomTicketStar" checked style="width:16px; height:16px; cursor:pointer;" />
+            <label for="checkCustomTicketStar" style="font-size:0.82rem; color:#fff; cursor:pointer; margin-bottom:0;">
+              ⭐ Pin to Starred Issues for 1-tap fast selection
+            </label>
+          </div>
+        </div>
+
+        <div class="modal-footer">
+          <button type="button" class="btn-modal-cancel" id="btnCancelCustomTicket">
+            Cancel
+          </button>
+          <button type="submit" class="btn-modal-primary" id="btnSaveCustomTicket">
+            Save Issue
           </button>
         </div>
       </form>
+    </div>
+  </div>
+
+  <!-- Custom Confirmation Dialog (Centered & Enhanced UI/UX) -->
+  <div class="modal-overlay" id="modalCustomConfirm">
+    <div class="modal-dialog modal-dialog-sm">
+      <div class="modal-accent-bar danger" id="confirmModalAccent"></div>
+      <div class="modal-header">
+        <div class="modal-header-info">
+          <div class="modal-icon-badge danger" id="confirmModalIconBadge">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><path d="M10.29 3.86L1.82 18a2 2 0 0 0 1.71 3h16.94a2 2 0 0 0 1.71-3L13.71 3.86a2 2 0 0 0-3.42 0z"/><line x1="12" y1="9" x2="12" y2="13"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          </div>
+          <div>
+            <h3 class="modal-title" id="confirmModalTitle">Confirm Action</h3>
+            <p class="modal-subtitle" id="confirmModalSubtitle">Please confirm to proceed</p>
+          </div>
+        </div>
+        <button type="button" class="modal-close-btn" id="btnCloseConfirmModal" title="Close">
+          <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+        </button>
+      </div>
+
+      <div class="modal-body">
+        <p id="confirmModalMessage" style="font-size:0.88rem; color:var(--text-main); line-height:1.5; margin:0;">
+          Are you sure you want to proceed?
+        </p>
+      </div>
+
+      <div class="modal-footer">
+        <button type="button" class="btn-modal-cancel" id="btnCancelConfirm">
+          Cancel
+        </button>
+        <button type="button" class="btn-modal-primary danger" id="btnActionConfirm">
+          Confirm
+        </button>
+      </div>
     </div>
   </div>
 

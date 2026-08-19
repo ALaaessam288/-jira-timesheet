@@ -112,9 +112,48 @@ const elements = {
   // Issue Selector Modal & Right Pane
   modalIssueSelector: document.getElementById('modalIssueSelector'),
   btnCloseIssueModal: document.getElementById('btnCloseIssueModal'),
+  btnCloseIssueModalFooter: document.getElementById('btnCloseIssueModalFooter'),
+  btnOpenAddCustomFromSelector: document.getElementById('btnOpenAddCustomFromSelector'),
   inputIssueSearch: document.getElementById('inputIssueSearch'),
   selectProjectFilter: document.getElementById('selectProjectFilter'),
   modalIssuesList: document.getElementById('modalIssuesList'),
+
+  // Settings & Jira Connection Modal
+  modalSettings: document.getElementById('modalSettings'),
+  btnCloseSettingsModal: document.getElementById('btnCloseSettingsModal'),
+  btnCancelSettings: document.getElementById('btnCancelSettings'),
+  btnToggleTokenVisibility: document.getElementById('btnToggleTokenVisibility'),
+  formSettings: document.getElementById('formSettings'),
+  settingDomain: document.getElementById('settingDomain'),
+  settingEmail: document.getElementById('settingEmail'),
+  settingApiToken: document.getElementById('settingApiToken'),
+  settingDailyGoal: document.getElementById('settingDailyGoal'),
+  btnTestConnection: document.getElementById('btnTestConnection'),
+  connectionStatusBanner: document.getElementById('connectionStatusBanner'),
+  btnClearData: document.getElementById('btnClearData'),
+
+  // Add / Update Custom Issue Modal
+  modalAddCustomTicket: document.getElementById('modalAddCustomTicket'),
+  customTicketModalTitle: document.getElementById('customTicketModalTitle'),
+  btnCloseCustomTicketModal: document.getElementById('btnCloseCustomTicketModal'),
+  btnCancelCustomTicket: document.getElementById('btnCancelCustomTicket'),
+  formAddCustomTicket: document.getElementById('formAddCustomTicket'),
+  inputCustomTicketKey: document.getElementById('inputCustomTicketKey'),
+  inputCustomTicketSummary: document.getElementById('inputCustomTicketSummary'),
+  selectCustomTicketType: document.getElementById('selectCustomTicketType'),
+  inputCustomTicketOrder: document.getElementById('inputCustomTicketOrder'),
+  checkCustomTicketStar: document.getElementById('checkCustomTicketStar'),
+
+  // Custom Centered Confirmation Modal
+  modalCustomConfirm: document.getElementById('modalCustomConfirm'),
+  confirmModalAccent: document.getElementById('confirmModalAccent'),
+  confirmModalIconBadge: document.getElementById('confirmModalIconBadge'),
+  confirmModalTitle: document.getElementById('confirmModalTitle'),
+  confirmModalSubtitle: document.getElementById('confirmModalSubtitle'),
+  confirmModalMessage: document.getElementById('confirmModalMessage'),
+  btnCancelConfirm: document.getElementById('btnCancelConfirm'),
+  btnActionConfirm: document.getElementById('btnActionConfirm'),
+  btnCloseConfirmModal: document.getElementById('btnCloseConfirmModal'),
 
   // Right-side Log Work Pane
   inputPaneIssueSearch: document.getElementById('inputPaneIssueSearch'),
@@ -384,6 +423,52 @@ function setupEventListeners() {
   // Form Submit
   elements.formLogWork.addEventListener('submit', handleLogWorkSubmit);
 
+  // Modal Controls & Actions
+  if (elements.btnCloseIssueModalFooter) {
+    elements.btnCloseIssueModalFooter.addEventListener('click', () => closeModal(elements.modalIssueSelector));
+  }
+  if (elements.btnOpenAddCustomFromSelector) {
+    elements.btnOpenAddCustomFromSelector.addEventListener('click', () => {
+      closeModal(elements.modalIssueSelector);
+      openAddCustomIssueModal();
+    });
+  }
+  if (elements.btnAddCustomIssueBtn) {
+    elements.btnAddCustomIssueBtn.addEventListener('click', () => {
+      openAddCustomIssueModal();
+    });
+  }
+  if (elements.btnCloseCustomTicketModal) {
+    elements.btnCloseCustomTicketModal.addEventListener('click', () => closeModal(elements.modalAddCustomTicket));
+  }
+  if (elements.btnCancelCustomTicket) {
+    elements.btnCancelCustomTicket.addEventListener('click', () => closeModal(elements.modalAddCustomTicket));
+  }
+  if (elements.formAddCustomTicket) {
+    elements.formAddCustomTicket.addEventListener('submit', handleAddCustomTicketSubmit);
+  }
+  if (elements.btnCancelSettings) {
+    elements.btnCancelSettings.addEventListener('click', () => closeModal(elements.modalSettings));
+  }
+  if (elements.btnToggleTokenVisibility) {
+    elements.btnToggleTokenVisibility.addEventListener('click', () => {
+      const isPwd = elements.settingApiToken.type === 'password';
+      elements.settingApiToken.type = isPwd ? 'text' : 'password';
+      elements.btnToggleTokenVisibility.textContent = isPwd ? '🔒' : '👁️';
+    });
+  }
+
+  // Quick Prefix Chips for Custom Ticket
+  document.querySelectorAll('.custom-prefix-chip').forEach(chip => {
+    chip.addEventListener('click', () => {
+      const prefix = chip.dataset.prefix;
+      if (elements.inputCustomTicketKey) {
+        elements.inputCustomTicketKey.value = prefix;
+        elements.inputCustomTicketKey.focus();
+      }
+    });
+  });
+
   // Copy Standup
   elements.btnCopyStandup.addEventListener('click', handleCopyStandup);
 
@@ -392,6 +477,8 @@ function setupEventListeners() {
     if (e.key === 'Escape') {
       closeModal(elements.modalSettings);
       closeModal(elements.modalIssueSelector);
+      closeModal(elements.modalAddCustomTicket);
+      closeModal(elements.modalCustomConfirm);
     }
   });
 
@@ -911,7 +998,15 @@ function renderHistoryList() {
       const selectedItems = (state.history || []).filter(l => state.selectedHistoryIds.has(l.id));
       if (selectedItems.length === 0) return;
 
-      if (confirm(`Are you sure you want to delete ${selectedItems.length} worklog(s) from Jira & Timesheet?`)) {
+      const confirmed = await showCustomConfirm({
+        title: 'Bulk Delete Worklogs',
+        subtitle: 'Permanent deletion from Jira & Timesheet',
+        message: `Are you sure you want to permanently delete ${selectedItems.length} selected worklog(s) from Jira Cloud and your local Timesheet?`,
+        confirmText: `Delete ${selectedItems.length} Worklogs`,
+        type: 'danger'
+      });
+
+      if (confirmed) {
         const creds = state.settings || {};
         showToast(`Deleting ${selectedItems.length} worklogs...`, 'info', 2000);
 
@@ -984,7 +1079,15 @@ function renderHistoryList() {
     // Single Delete Button
     const delBtn = card.querySelector('.btn-icon-danger');
     delBtn.onclick = async () => {
-      if (confirm(`Delete log entry for ${log.issueKey} (${timeFormatted}) from Jira & Timesheet?`)) {
+      const confirmed = await showCustomConfirm({
+        title: 'Delete Worklog Entry',
+        subtitle: `${log.issueKey} (${timeFormatted})`,
+        message: `Are you sure you want to delete worklog entry for ${log.issueKey} (${timeFormatted}) on ${log.date || 'today'} from Jira Cloud and your Timesheet?`,
+        confirmText: 'Delete Entry',
+        type: 'danger'
+      });
+
+      if (confirmed) {
         const creds = state.settings || {};
         if (log.jiraWorklogId && log.issueKey) {
           try {
@@ -1713,9 +1816,19 @@ function handleSaveSettings(e) {
   showToast('Settings saved successfully!', 'success');
 }
 
-function handleClearData() {
-  if (confirm('Are you sure you want to reset all stored worklogs and settings?')) {
+async function handleClearData() {
+  const confirmed = await showCustomConfirm({
+    title: 'Reset All Data',
+    subtitle: 'Clear all worklogs, credentials, and cache',
+    message: 'Are you sure you want to permanently reset all stored Jira credentials, timesheet history, and custom favorites?',
+    confirmText: 'Reset Everything',
+    type: 'danger'
+  });
+
+  if (confirmed) {
     storage.clearAllData();
+    closeModal(elements.modalSettings);
+    showToast('All local data cleared successfully', 'info');
   }
 }
 
@@ -1733,7 +1846,135 @@ function showBanner(html, type = 'info') {
 }
 
 /**
- * Modal Helpers
+ * Custom Centered Confirmation Dialog System
+ */
+function showCustomConfirm({
+  title = 'Confirm Action',
+  subtitle = 'Please confirm to proceed',
+  message = 'Are you sure you want to proceed?',
+  confirmText = 'Confirm',
+  cancelText = 'Cancel',
+  type = 'danger'
+}) {
+  return new Promise((resolve) => {
+    if (!elements.modalCustomConfirm) {
+      resolve(window.confirm(message));
+      return;
+    }
+
+    elements.confirmModalTitle.textContent = title;
+    elements.confirmModalSubtitle.textContent = subtitle;
+    elements.confirmModalMessage.textContent = message;
+    elements.btnActionConfirm.textContent = confirmText;
+    elements.btnCancelConfirm.textContent = cancelText;
+
+    // Apply color accents
+    if (type === 'danger') {
+      if (elements.confirmModalAccent) elements.confirmModalAccent.className = 'modal-accent-bar danger';
+      if (elements.confirmModalIconBadge) elements.confirmModalIconBadge.className = 'modal-icon-badge danger';
+      if (elements.btnActionConfirm) elements.btnActionConfirm.className = 'btn-modal-primary danger';
+    } else if (type === 'warning') {
+      if (elements.confirmModalAccent) elements.confirmModalAccent.className = 'modal-accent-bar warning';
+      if (elements.confirmModalIconBadge) elements.confirmModalIconBadge.className = 'modal-icon-badge warning';
+      if (elements.btnActionConfirm) elements.btnActionConfirm.className = 'btn-modal-primary';
+    } else {
+      if (elements.confirmModalAccent) elements.confirmModalAccent.className = 'modal-accent-bar';
+      if (elements.confirmModalIconBadge) elements.confirmModalIconBadge.className = 'modal-icon-badge';
+      if (elements.btnActionConfirm) elements.btnActionConfirm.className = 'btn-modal-primary';
+    }
+
+    function onConfirm() {
+      cleanup();
+      closeModal(elements.modalCustomConfirm);
+      resolve(true);
+    }
+
+    function onCancel() {
+      cleanup();
+      closeModal(elements.modalCustomConfirm);
+      resolve(false);
+    }
+
+    function cleanup() {
+      elements.btnActionConfirm.removeEventListener('click', onConfirm);
+      elements.btnCancelConfirm.removeEventListener('click', onCancel);
+      elements.btnCloseConfirmModal.removeEventListener('click', onCancel);
+    }
+
+    elements.btnActionConfirm.addEventListener('click', onConfirm);
+    elements.btnCancelConfirm.addEventListener('click', onCancel);
+    elements.btnCloseConfirmModal.addEventListener('click', onCancel);
+
+    openModal(elements.modalCustomConfirm);
+  });
+}
+
+/**
+ * Add / Edit Custom Issue & Task Dialog
+ */
+function openAddCustomIssueModal(issueToEdit = null) {
+  if (issueToEdit) {
+    elements.customTicketModalTitle.textContent = 'Edit Custom Issue';
+    elements.inputCustomTicketKey.value = issueToEdit.key || '';
+    elements.inputCustomTicketSummary.value = issueToEdit.summary || '';
+    elements.selectCustomTicketType.value = issueToEdit.issueType || 'Task';
+  } else {
+    elements.customTicketModalTitle.textContent = 'Add Custom Issue / Task';
+    elements.inputCustomTicketKey.value = '';
+    elements.inputCustomTicketSummary.value = '';
+    elements.selectCustomTicketType.value = 'Task';
+  }
+  openModal(elements.modalAddCustomTicket);
+  if (elements.inputCustomTicketKey) elements.inputCustomTicketKey.focus();
+}
+
+function handleAddCustomTicketSubmit(e) {
+  e.preventDefault();
+  const key = (elements.inputCustomTicketKey.value || '').trim().toUpperCase();
+  const summary = (elements.inputCustomTicketSummary.value || '').trim();
+  const issueType = elements.selectCustomTicketType.value || 'Task';
+  const shouldStar = elements.checkCustomTicketStar ? elements.checkCustomTicketStar.checked : true;
+
+  if (!key || !summary) {
+    showToast('Please provide both Issue Key and Summary', 'warning');
+    return;
+  }
+
+  const newIssue = {
+    id: `custom_${Date.now()}`,
+    key,
+    summary,
+    issueType,
+    status: 'In Progress',
+    isFavorite: shouldStar,
+    isCustom: true
+  };
+
+  // Add to recents
+  storage.addRecentIssue(newIssue);
+  state.recents = storage.getRecentIssues();
+
+  // If starred, add to favorites
+  if (shouldStar) {
+    storage.toggleFavorite(newIssue);
+    state.favorites = storage.getFavorites();
+  }
+
+  // Set as selected issue for worklog form
+  state.selectedIssue = newIssue;
+  renderSelectedIssue();
+  renderQuickFavorites();
+  renderFavoritesFullList();
+
+  closeModal(elements.modalAddCustomTicket);
+  closeModal(elements.modalIssueSelector);
+  switchView('log-view');
+
+  showToast(`✓ Issue ${newIssue.key} ready for logging!`, 'success', 3000);
+}
+
+/**
+ * Modal Helpers (Centered & Smooth)
  */
 function openModal(modal) {
   if (!modal) return;
