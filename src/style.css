@@ -1097,22 +1097,22 @@ textarea.form-control {
 }
 
 /* ==========================================================================
-   Modern Centered Dialog & Modal System (UI/UX Enhanced)
+   Modern Centered Dialog & Modal System (Ultra-Compact & Sleek UI/UX)
    ========================================================================== */
 .modal-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(6, 11, 22, 0.85);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  background: rgba(6, 11, 22, 0.82);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   z-index: 1000;
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
+  padding: 12px;
   opacity: 0;
   visibility: hidden;
-  transition: opacity 0.25s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.25s ease;
+  transition: opacity 0.2s cubic-bezier(0.16, 1, 0.3, 1), visibility 0.2s ease;
 }
 
 .modal-overlay.open {
@@ -1121,28 +1121,28 @@ textarea.form-control {
 }
 
 .modal-dialog {
-  background: #111827;
+  background: #0f172a;
   border: 1px solid rgba(0, 82, 204, 0.35);
-  border-radius: 16px;
+  border-radius: 12px;
   width: 100%;
-  max-width: 580px;
-  max-height: 90vh;
+  max-width: 420px;
+  max-height: 85vh;
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  box-shadow: 0 25px 65px -12px rgba(0, 0, 0, 0.85), 0 0 35px rgba(0, 82, 204, 0.18);
-  transform: scale(0.94) translateY(12px);
-  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.25s ease;
+  box-shadow: 0 20px 50px -10px rgba(0, 0, 0, 0.85), 0 0 25px rgba(0, 82, 204, 0.15);
+  transform: scale(0.95) translateY(8px);
+  transition: transform 0.2s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.2s ease;
   margin: auto;
   position: relative;
 }
 
 .modal-dialog-sm {
-  max-width: 440px;
+  max-width: 360px;
 }
 
 .modal-dialog-lg {
-  max-width: 660px;
+  max-width: 480px;
 }
 
 .modal-overlay.open .modal-dialog {
@@ -1151,7 +1151,7 @@ textarea.form-control {
 }
 
 .modal-accent-bar {
-  height: 3px;
+  height: 2.5px;
   width: 100%;
   background: linear-gradient(90deg, #0052CC, #00C7E6 50%, #579DFF);
   flex-shrink: 0;
@@ -1169,30 +1169,30 @@ textarea.form-control {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 16px 20px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--border-subtle);
-  background: rgba(22, 30, 49, 0.6);
+  background: rgba(17, 24, 39, 0.8);
   flex-shrink: 0;
-  gap: 12px;
+  gap: 8px;
 }
 
 .modal-header-info {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   min-width: 0;
 }
 
 .modal-icon-badge {
-  width: 38px;
-  height: 38px;
-  border-radius: 10px;
+  width: 28px;
+  height: 28px;
+  border-radius: 7px;
   background: rgba(0, 82, 204, 0.2);
   border: 1px solid rgba(0, 82, 204, 0.4);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-size: 1.15rem;
+  font-size: 0.95rem;
   color: #579DFF;
   flex-shrink: 0;
 }
@@ -1216,25 +1216,25 @@ textarea.form-control {
 }
 
 .modal-title {
-  font-size: 1.05rem;
-  font-weight: 800;
+  font-size: 0.92rem;
+  font-weight: 700;
   color: #FFFFFF;
   margin: 0;
   letter-spacing: -0.01em;
-  line-height: 1.25;
+  line-height: 1.2;
 }
 
 .modal-subtitle {
-  font-size: 0.76rem;
+  font-size: 0.7rem;
   color: var(--text-muted);
-  margin: 2px 0 0 0;
+  margin: 1px 0 0 0;
   line-height: 1.2;
 }
 
 .modal-close-btn {
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
+  width: 26px;
+  height: 26px;
+  border-radius: 6px;
   background: transparent;
   border: 1px solid transparent;
   color: var(--text-sub);
@@ -1244,6 +1244,7 @@ textarea.form-control {
   cursor: pointer;
   transition: all 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   padding: 0;
+  font-size: 1.1rem;
 }
 
 .modal-close-btn:hover {
@@ -1254,29 +1255,44 @@ textarea.form-control {
 }
 
 .modal-body {
-  padding: 20px;
+  padding: 12px 14px;
   overflow-y: auto;
   flex: 1;
 }
 
+.modal-body .form-group {
+  margin-bottom: 10px;
+}
+
+.modal-body .form-label {
+  font-size: 0.75rem;
+  margin-bottom: 4px;
+}
+
+.modal-body .form-control {
+  padding: 7px 10px;
+  font-size: 0.82rem;
+  border-radius: 6px;
+}
+
 .modal-footer {
-  padding: 14px 20px;
+  padding: 10px 14px;
   border-top: 1px solid var(--border-subtle);
-  background: rgba(22, 30, 49, 0.6);
+  background: rgba(17, 24, 39, 0.8);
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 10px;
+  gap: 8px;
   flex-shrink: 0;
 }
 
 .btn-modal-cancel {
-  padding: 9px 18px;
-  border-radius: var(--radius-sm);
+  padding: 6px 12px;
+  border-radius: 6px;
   background: var(--bg-surface-elevated);
   border: 1px solid var(--border-subtle);
   color: var(--text-main);
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 600;
   cursor: pointer;
   transition: all 0.2s ease;
@@ -1288,35 +1304,35 @@ textarea.form-control {
 }
 
 .btn-modal-primary {
-  padding: 9px 20px;
-  border-radius: var(--radius-sm);
-  background: linear-gradient(135deg, #0052CC, #0747A6);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  padding: 6px 14px;
+  border-radius: 6px;
+  background: linear-gradient(135deg, var(--jira-primary), #0065FF);
+  border: 1px solid rgba(255, 255, 255, 0.15);
   color: #FFFFFF;
-  font-size: 0.85rem;
+  font-size: 0.78rem;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.2s ease;
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  box-shadow: 0 4px 14px rgba(0, 82, 204, 0.4);
+  box-shadow: 0 2px 8px rgba(0, 82, 204, 0.35);
+  transition: all 0.2s ease;
 }
 
 .btn-modal-primary:hover {
-  background: linear-gradient(135deg, #0065FF, #0052CC);
+  background: linear-gradient(135deg, var(--jira-primary-hover), #0747A6);
+  box-shadow: 0 4px 12px rgba(0, 82, 204, 0.5);
   transform: translateY(-1px);
-  box-shadow: 0 6px 18px rgba(0, 101, 255, 0.5);
 }
 
 .btn-modal-primary.danger {
-  background: linear-gradient(135deg, #DE350B, #BF2600);
-  box-shadow: 0 4px 14px rgba(222, 53, 11, 0.4);
+  background: linear-gradient(135deg, #DE350B, #FF5630);
+  box-shadow: 0 2px 8px rgba(222, 53, 11, 0.35);
 }
 
 .btn-modal-primary.danger:hover {
-  background: linear-gradient(135deg, #FF5630, #DE350B);
-  box-shadow: 0 6px 18px rgba(255, 86, 48, 0.5);
+  background: linear-gradient(135deg, #BF2600, #DE350B);
+  box-shadow: 0 4px 12px rgba(222, 53, 11, 0.5);
 }
 
 /* Issues Scroll List */
