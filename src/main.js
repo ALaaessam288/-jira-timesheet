@@ -1175,14 +1175,16 @@ async function handleLogWorkSubmit(e) {
       const jiraStartedStr = toJiraDateTimeString(startedDate);
 
       let syncedToJira = false;
+      let jiraWorklogId = null;
       if (!isGeneralIssue) {
         try {
-          await jiraApi.logWork(state.selectedIssue.key, {
+          const jiraRes = await jiraApi.logWork(state.selectedIssue.key, {
             timeSpentSeconds: totalSeconds,
             started: jiraStartedStr,
             comment: description
           }, creds);
           syncedToJira = true;
+          jiraWorklogId = jiraRes?.id || null;
           successCount++;
         } catch (err) {
           console.error(`Error logging work for ${dayStr}:`, err);
@@ -1198,7 +1200,8 @@ async function handleLogWorkSubmit(e) {
         started: jiraStartedStr,
         comment: description,
         isBillable,
-        syncedToJira
+        syncedToJira,
+        jiraWorklogId
       });
     }
 
@@ -1226,16 +1229,18 @@ async function handleLogWorkSubmit(e) {
   }
 
   // Single Day Submission
+  let jiraWorklogId = null;
   if (!isGeneralIssue) {
     try {
       const creds = state.settings || {};
       // Call Jira API via proxy
-      await jiraApi.logWork(state.selectedIssue.key, {
+      const jiraRes = await jiraApi.logWork(state.selectedIssue.key, {
         timeSpentSeconds: totalSeconds,
         started: jiraStartedStr,
         comment: description
       }, creds);
       syncedToJira = true;
+      jiraWorklogId = jiraRes?.id || null;
     } catch (err) {
       syncError = err.message;
       console.error('Jira sync error:', err);
@@ -1253,6 +1258,7 @@ async function handleLogWorkSubmit(e) {
     comment: description,
     isBillable,
     syncedToJira,
+    jiraWorklogId
   });
 
   // Add to recents if not general
@@ -1276,9 +1282,9 @@ async function handleLogWorkSubmit(e) {
   if (isGeneralIssue) {
     showToast(`Logged ${formatSecondsToTime(totalSeconds)} for General Activity`, 'success', 3500);
   } else if (syncedToJira) {
-    showToast(`Worklog submitted successfully to Jira (${state.selectedIssue.key}, ${formatSecondsToTime(totalSeconds)})`, 'success', 4000);
+    showToast(`🚀 Logged ${formatSecondsToTime(totalSeconds)} on ${state.selectedIssue.key} to Jira Cloud!`, 'success', 4500);
   } else if (syncError) {
-    showToast(`Saved locally. Jira sync error: ${syncError}`, 'warning', 5000);
+    showToast(`❌ Jira Sync Failed: ${syncError}`, 'error', 6500);
   } else {
     showToast(`Worklog saved to timesheet (${formatSecondsToTime(totalSeconds)})`, 'success', 3500);
   }

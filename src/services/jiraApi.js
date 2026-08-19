@@ -26,21 +26,40 @@ class JiraApiService {
       body: options.body
     };
 
-    // Determine proxy endpoint: if on GitHub Pages, route through the serverless proxy
+    // Determine proxy endpoint: if on GitHub Pages or external, route through Vercel serverless proxy
     let proxyUrl = '/api/jira-proxy';
-    if (typeof window !== 'undefined' && window.location && window.location.hostname.includes('github.io')) {
-      proxyUrl = 'https://jira-time-sheet.netlify.app/api/jira-proxy';
+    if (typeof window !== 'undefined' && window.location) {
+      if (window.location.hostname.includes('github.io') || window.location.protocol === 'file:') {
+        proxyUrl = 'https://jira-timesheet-zeta.vercel.app/api/jira-proxy';
+      }
     }
 
     try {
-      const response = await fetch(proxyUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Accept': 'application/json'
-        },
-        body: JSON.stringify(payload)
-      });
+      let response;
+      try {
+        response = await fetch(proxyUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json'
+          },
+          body: JSON.stringify(payload)
+        });
+      } catch (networkErr) {
+        // Fallback to absolute Vercel proxy if local relative path fails
+        if (proxyUrl !== 'https://jira-timesheet-zeta.vercel.app/api/jira-proxy') {
+          response = await fetch('https://jira-timesheet-zeta.vercel.app/api/jira-proxy', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Accept': 'application/json'
+            },
+            body: JSON.stringify(payload)
+          });
+        } else {
+          throw networkErr;
+        }
+      }
 
       const responseText = await response.text();
       let data = null;
