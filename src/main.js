@@ -797,16 +797,18 @@ function updateSubmitButtonLabel() {
   const h = parseInt(elements.inputHours.value, 10) || 0;
   const m = parseInt(elements.inputMinutes.value, 10) || 0;
   const timeFormatted = formatSecondsToTime(toSeconds(h, m));
+  const isGeneral = state.selectedIssue?.isGeneral || state.selectedIssue?.key === 'NO-ISSUE';
+  const targetLabel = isGeneral ? 'Local Timesheet' : `Jira Cloud (${state.selectedIssue?.key || 'Jira'})`;
   
   if (state.isMultiDayMode && state.selectedMultiDays.length > 1) {
     const totalCount = state.selectedMultiDays.length;
     const totalSeconds = toSeconds(h, m) * totalCount;
     const totalTimeFormatted = formatSecondsToTime(totalSeconds);
-    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted}/day × ${totalCount} days = ${totalTimeFormatted})`;
+    elements.btnSubmitText.textContent = `Submit to ${targetLabel} (${timeFormatted}/day × ${totalCount}d = ${totalTimeFormatted})`;
   } else if (state.isMultiDayMode && state.selectedMultiDays.length === 1) {
-    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted} for 1 day)`;
+    elements.btnSubmitText.textContent = `Submit to ${targetLabel} (${timeFormatted} for 1 day)`;
   } else {
-    elements.btnSubmitText.textContent = `Submit to Jira (${timeFormatted})`;
+    elements.btnSubmitText.textContent = `Submit to ${targetLabel} (${timeFormatted})`;
   }
 
   // Update multi days total hours if rendered
