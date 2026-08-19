@@ -371,7 +371,7 @@ class JiraApiService {
             content: [
               {
                 type: 'text',
-                text: comment || 'Work logged via Mobile Timesheet App'
+                text: comment || ''
               }
             ]
           }

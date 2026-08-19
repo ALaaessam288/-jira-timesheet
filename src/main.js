@@ -1132,7 +1132,14 @@ async function handleLogWorkSubmit(e) {
 
   const category = document.querySelector('input[name="workCategory"]:checked')?.value || 'Billable';
   const isBillable = category === 'Billable';
-  const description = elements.inputDescription.value.trim() || 'Work logged via Mobile Timesheet App';
+  const description = elements.inputDescription.value.trim();
+
+  if (!description) {
+    showToast('Please enter a work description.', 'warning');
+    elements.inputDescription.focus();
+    return;
+  }
+
   const startedDateTime = elements.inputDateTime.value ? new Date(elements.inputDateTime.value) : new Date();
   const jiraStartedStr = toJiraDateTimeString(startedDateTime);
 
@@ -1173,7 +1180,7 @@ async function handleLogWorkSubmit(e) {
           await jiraApi.logWork(state.selectedIssue.key, {
             timeSpentSeconds: totalSeconds,
             started: jiraStartedStr,
-            comment: `${description} [${category}]`
+            comment: description
           }, creds);
           syncedToJira = true;
           successCount++;
@@ -1209,6 +1216,10 @@ async function handleLogWorkSubmit(e) {
     renderWeeklyCalendar();
     renderHistoryList();
 
+    if (!elements.checkLogAnother.checked) {
+      elements.inputDescription.value = '';
+    }
+
     const totalLoggedTime = formatSecondsToTime(totalSeconds * totalDays);
     showToast(`✓ Logged ${totalDays} days to Jira (${totalLoggedTime} total on ${state.selectedIssue.key})!`, 'success', 4500);
     return;
@@ -1222,7 +1233,7 @@ async function handleLogWorkSubmit(e) {
       await jiraApi.logWork(state.selectedIssue.key, {
         timeSpentSeconds: totalSeconds,
         started: jiraStartedStr,
-        comment: `${description} [${category}]`
+        comment: description
       }, creds);
       syncedToJira = true;
     } catch (err) {
@@ -1274,7 +1285,7 @@ async function handleLogWorkSubmit(e) {
 
   // Check if "Log another" is checked
   if (!elements.checkLogAnother.checked) {
-    elements.inputDescription.value = 'Development & implementation of features';
+    elements.inputDescription.value = '';
   }
 }
 
